@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Scrap Empire: Realistic Garage</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-dark: #070913;
+            --panel-bg: rgba(16, 22, 38, 0.85);
+            --panel-border: rgba(0, 229, 255, 0.25);
+            --neon-cyan: #00e5ff;
+            --neon-purple: #9c27b0;
+            --neon-gold: #ffd700;
+            --neon-green: #00e676;
+            --neon-red: #ff1744;
+            --rarity-common: #b0bec5;
+            --rarity-rare: #29b6f6;
+            --rarity-epic: #ab47bc;
+            --rarity-legendary: #ffa726;
+            --rarity-mythic: #ff1744;
+            --text-main: #ffffff;
+            --text-sub: #90a4ae;
+        }
+
+        * {
+            box-sizing: border-box; margin: 0; padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            user-select: none; -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            width: 100vw; height: 100dvh;
+            /* Реалистичный стилизованный фон гаража */
+            background: 
+                radial-gradient(circle at 50% 30%, rgba(0, 229, 255, 0.12), transparent 70%),
+                radial-gradient(circle at 80% 80%, rgba(156, 39, 176, 0.15), transparent 50%),
+                linear-gradient(180deg, rgba(7, 9, 19, 0.75) 0%, rgba(7, 9, 19, 0.95) 100%),
+                url('https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1200&q=80') center/cover no-repeat;
+            color: var(--text-main); overflow: hidden;
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: calc(8px + env(safe-area-inset-top)) 10px calc(8px + env(safe-area-inset-bottom));
+        }
+
+        /* ЭКРАН УРОВНЯ И ВЕРХНЯЯ ПАНЕЛЬ */
+        .top-container { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+        
+        .level-bar-box {
+            background: var(--panel-bg); border: 1px solid var(--panel-border);
+            border-radius: 12px; padding: 6px 12px; display: flex; align-items: center; justify-content: space-between;
+            backdrop-filter: blur(8px);
+        }
+        .level-badge { font-weight: 900; font-size: 0.85rem; color: var(--neon-gold); }
+        .xp-track { flex: 1; height: 8px; background: rgba(255,255,255,0.1); margin: 0 10px; border-radius: 4px; overflow: hidden; }
+        .xp-fill { width: 0%; height: 100%; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple)); transition: width 0.3s ease; }
+        .xp-text { font-size: 0.7rem; color: var(--text-sub); font-weight: 700; }
+
+        .header-bar { display: flex; justify-content: space-between; align-items: center; gap: 6px; height: 40px; }
+        .res-pill {
+            background: var(--panel-bg); border: 1px solid var(--panel-border);
+            border-radius: 12px; padding: 4px 10px; display: flex; align-items: center; gap: 6px;
+            font-size: 0.8rem; font-weight: 800; flex: 1; justify-content: center; height: 100%;
+            backdrop-filter: blur(8px);
+        }
+        .btn-icon {
+            background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 12px;
+            min-width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; cursor: pointer; backdrop-filter: blur(8px);
+        }
+        .btn-icon:active { transform: scale(0.92); }
+
+        /* ЗОНА ГАРАЖА */
+        .garage-area {
+            flex: 1; margin: 8px 0; border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.15);
+            position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            overflow: hidden;
+            background: radial-gradient(ellipse at center, rgba(30, 40, 70, 0.6) 0%, rgba(10, 12, 22, 0.9) 100%);
+            backdrop-filter: blur(4px); box-shadow: inset 0 0 40px rgba(0,0,0,0.8);
+        }
+
+        .car-badge-rarity {
+            position: absolute; top: 12px; padding: 4px 12px; border-radius: 20px;
+            font-size: 0.65rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5); display: none;
+        }
+
+        .car-title {
+            position: absolute; top: 38px; font-size: 0.9rem; font-weight: 900;
+            color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.8); text-transform: uppercase; text-align: center;
+        }
+
+        .car-wrapper {
+            width: 280px; height: 120px; position: relative;
+            transition: transform 0.15s ease, filter 0.3s ease;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .car-wrapper.hit { transform: scale(0.96) translateY(2px); }
+        .car-wrapper.empty { opacity: 0.2; filter: grayscale(1); }
+
+        .fx-text {
+            position: absolute; color: var(--neon-gold); font-weight: 900;
+            font-size: 1.2rem; pointer-events: none; animation: flyUp 0.6s ease-out forwards;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.9); z-index: 50;
+        }
+        @keyframes flyUp {
+            0% { opacity: 1; transform: translateY(0) scale(0.8); }
+            100% { opacity: 0; transform: translateY(-35px) scale(1.1); }
+        }
+
+        .btn-restore {
+            position: absolute; bottom: 12px; background: linear-gradient(90deg, #ff9800, #f57c00);
+            border: none; color: #fff; font-weight: 900; font-size: 0.72rem;
+            padding: 8px 16px; border-radius: 20px; box-shadow: 0 4px 15px rgba(255, 152, 0, 0.5);
+            cursor: pointer; display: none; z-index: 10; text-transform: uppercase;
+        }
+
+        /* ДЕТАЛИ */
+        .parts-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+            min-height: 70px; flex-shrink: 0; margin-bottom: 8px; width: 100%;
+        }
+        .part-btn {
+            background: var(--panel-bg); border: 1px solid var(--panel-border);
+            border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 6px; cursor: pointer; backdrop-filter: blur(8px);
+        }
+        .part-btn:active { transform: scale(0.95); }
+        .part-btn.disabled { opacity: 0.3; pointer-events: none; }
+        .part-name { font-size: 0.68rem; font-weight: 800; color: #fff; text-align: center; }
+        .part-info { font-size: 0.65rem; font-weight: 800; color: var(--neon-cyan); margin-top: 2px; }
+
+        /* НАВИГАЦИЯ */
+        .bottom-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; height: 54px; width: 100%; flex-shrink: 0; }
+        .nav-item {
+            background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 12px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 2px; cursor: pointer; backdrop-filter: blur(8px);
+        }
+        .nav-item:active { transform: scale(0.93); border-color: var(--neon-cyan); }
+        .nav-icon { font-size: 1.1rem; }
+        .nav-label { font-size: 0.55rem; font-weight: 800; color: var(--text-sub); text-transform: uppercase; }
+
+        /* МОДАЛЬНЫЕ ОКНА */
+        .modal-bg {
+            position: fixed; inset: 0; background: rgba(4, 6, 12, 0.85);
+            display: none; justify-content: center; align-items: center;
+            z-index: 100; padding: 16px; backdrop-filter: blur(10px);
+        }
+        .modal-box {
+            background: rgba(18, 24, 42, 0.95); border: 1px solid var(--neon-cyan);
+            border-radius: 20px; width: 100%; max-width: 340px; padding: 18px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; gap: 10px;
+        }
+        .modal-head { font-size: 1rem; font-weight: 900; color: var(--neon-gold); text-align: center; }
+        .modal-body { font-size: 0.8rem; color: var(--text-sub); text-align: center; line-height: 1.4; }
+
+        .btn-act {
+            background: linear-gradient(90deg, var(--neon-cyan), #00b0ff); border: none;
+            color: #000; font-weight: 900; font-size: 0.8rem; padding: 10px;
+            border-radius: 12px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px;
+        }
+        .btn-act.disabled { opacity: 0.5; pointer-events: none; }
+        .btn-close {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+            color: var(--text-sub); font-weight: 800; font-size: 0.75rem; padding: 8px;
+            border-radius: 10px; cursor: pointer; text-align: center;
+        }
+
+        .donat-card {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; padding: 10px; display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .toast-msg {
+            position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+            background: var(--neon-cyan); color: #000; padding: 6px 16px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 900; display: none; z-index: 200;
+            box-shadow: 0 4px 15px rgba(0,229,255,0.4); text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toast-msg" id="toast">Уведомление</div>
+
+    <div class="top-container">
+        <div class="level-bar-box">
+            <div class="level-badge">УР. <span id="lvl-val">1</span></div>
+            <div class="xp-track"><div class="xp-fill" id="xp-fill"></div></div>
+            <div class="xp-text"><span id="xp-val">0</span> / <span id="xp-max-val">100</span> XP</div>
+        </div>
+
+        <div class="header-bar">
+            <div class="btn-icon" onclick="openModal('shop-modal')" title="Донат">💎</div>
+            <div class="res-pill" style="color: var(--neon-gold)">🪙 <span id="m-val">1,000</span></div>
+            <div class="res-pill" style="color: var(--neon-cyan)">💎 <span id="g-val">10</span></div>
+            <div class="btn-icon" onclick="openModal('garage-modal')" title="Стиль">🏭</div>
+        </div>
+    </div>
+
+    <div class="garage-area" id="garage-viewport">
+        <div class="car-badge-rarity" id="car-rarity-badge">COMMON</div>
+        <div class="car-title" id="car-title-text">ОЖИДАНИЕ ЗАКАЗА</div>
+        <div class="car-wrapper empty" id="car-box"></div>
+        <button class="btn-restore" id="restore-btn" onclick="restoreCar()">🎨 РЕСТАВРИРОВАТЬ И ПРОДАТЬ</button>
+    </div>
+
+    <div class="parts-grid" id="parts-box"></div>
+
+    <div class="bottom-bar">
+        <div class="nav-item" onclick="orderCar()">
+            <div class="nav-icon">🚗</div>
+            <div class="nav-label">Заказ</div>
+        </div>
+        <div class="nav-item" onclick="openModal('tools-modal')">
+            <div class="nav-icon">🧰</div>
+            <div class="nav-label">Ключи</div>
+        </div>
+        <div class="nav-item" onclick="openModal('wheel-modal')">
+            <div class="nav-icon">🎰</div>
+            <div class="nav-label">Рулетка</div>
+        </div>
+        <div class="nav-item" onclick="openModal('vault-modal')">
+            <div class="nav-icon">💼</div>
+            <div class="nav-label">Сейф</div>
+        </div>
+        <div class="nav-item" onclick="openModal('menu-modal')">
+            <div class="nav-icon">⭐</div>
+            <div class="nav-label">Еще</div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА: ИНСТРУМЕНТЫ -->
+    <div class="modal-bg" id="tools-modal">
+        <div class="modal-box">
+            <div class="modal-head">🧰 ИНСТРУМЕНТЫ</div>
+            <div class="modal-body">
+                Уровень: <b style="color:var(--neon-cyan);" id="tool-lvl-display">1</b><br>
+                Название: <b style="color:#fff;" id="tool-name">Гаечный ключ</b><br>
+                Сила клика: <b style="color:var(--neon-gold);" id="tool-power-display">-1 болт</b>
+            </div>
+            <button class="btn-act" id="tool-up-btn" onclick="upTool()">УЛУЧШИТЬ (🪙 <span id="tool-cost-display">300</span>)</button>
+            <div class="btn-close" onclick="closeModal('tools-modal')">ЗАКРЫТЬ</div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА: НАСТОЯЩИЙ ДОНАТ (APPLE PAY) -->
+    <div class="modal-bg" id="shop-modal">
+        <div class="modal-box">
+            <div class="modal-head">💎 МАГАЗИН И ДОНАТ</div>
+            <div class="modal-body">Пополнение через Apple Pay / Карты:</div>
+            
+            <div class="donat-card">
+                <div><b>100 💎 Кристаллов</b><br><small style="color:var(--text-sub)">Набор Новичка</small></div>
+                <button class="btn-act" style="padding: 6px 12px;" onclick="processPayment('100💎', '$0.99', 100)">🍎 $0.99</button>
+            </div>
+            <div class="donat-card">
+                <div><b>600 💎 Кристаллов</b><br><small style="color:var(--text-sub)">Популярный выбор</small></div>
+                <button class="btn-act" style="padding: 6px 12px;" onclick="processPayment('600💎', '$4.99', 600)">🍎 $4.99</button>
+            </div>
+            <div class="donat-card">
+                <div><b>1500 💎 Кристаллов</b><br><small style="color:var(--text-sub)">Набор Магната</small></div>
+                <button class="btn-act" style="padding: 6px 12px;" onclick="processPayment('1500💎', '$9.99', 1500)">🍎 $9.99</button>
+            </div>
+
+            <div class="btn-close" onclick="closeModal('shop-modal')">ЗАКРЫТЬ</div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА: СТИЛИ ГАРАЖА -->
+    <div class="modal-bg" id="garage-modal">
+        <div class="modal-box">
+            <div class="modal-head">🏭 СТИЛИ ГАРАЖА</div>
+            <button class="btn-act" style="background:#1e2642; color:#fff;" onclick="selectGarage(1)">
+                🌌 Стандартный Гараж [+0%]
+            </button>
+            <button class="btn-act" id="garage-btn-2" style="background:#311b92; color:#fff;" onclick="selectGarage(2)">
+                👾 Неоновый Ангар [+15% 🪙] (🪙 5,000)
+            </button>
+            <button class="btn-act" id="garage-btn-3" style="background:#4e342e; color:#fff;" onclick="selectGarage(3)">
+                🔥 VIP Бункер [+30% 🪙] (💎 25)
+            </button>
+            <div class="btn-close" onclick="closeModal('garage-modal')">ЗАКРЫТЬ</div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА: РУЛЕТКА -->
+    <div class="modal-bg" id="wheel-modal">
+        <div class="modal-box">
+            <div class="modal-head">🎰 КОЛЕСО ФОРТУНЫ</div>
+            <div class="modal-body">Испытай удачу! Таймер:<br><b style="color:var(--neon-gold); font-size:1.2rem;" id="wheel-timer">ГОТОВО</b></div>
+            <button class="btn-act" id="wheel-spin-btn" onclick="spinWheel()">КРУТИТЬ РУЛЕТКУ</button>
+            <div class="btn-close" onclick="closeModal('wheel-modal')">ЗАКРЫТЬ</div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА: СЕЙФ -->
+    <div class="modal-bg" id="vault-modal">
+        <div class="modal-box">
+            <div class="modal-head">💼 ОФФЛАЙН СЕЙФ</div>
+            <div class="modal-body">Накопленный доход:<br><b style="color:var(--neon-gold); font-size:1.3rem;" id="offline-val">🪙 0</b></div>
+            <button class="btn-act" onclick="claimOffline()">ЗАБРАТЬ</button>
+            <div class="btn-close" onclick="closeModal('vault-modal')">ЗАКРЫТЬ</div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА: МЕНЮ -->
+    <div class="modal-bg" id="menu-modal">
+        <div class="modal-box">
+            <div class="modal-head">⭐ МЕНЮ</div>
+            <button class="btn-act" id="contract-btn" style="background:#37474f; color:#fff;" onclick="claimContract()">
+                📜 Подписать Контракт (+2,500 🪙)
+            </button>
+            <button class="btn-act" style="background:#ff1744; color:#fff;" onclick="doPrestige()">🏛 Престиж (+50% к доходу)</button>
+            <div class="btn-close" onclick="closeModal('menu-modal')">ЗАКРЫТЬ</div>
+        </div>
+    </div>
+
+    <script>
+        var game = {
+            money: 1000, gems: 10, level: 1, xp: 0, xpMax: 100,
+            toolLvl: 1, prestige: 0, activeCar: null, offlineCoins: 500,
+            garageStyle: 1, garageMultiplier: 1.0, unlockedGarages: [1],
+            wheelCooldown: 0, contractCooldown: 0
+        };
+
+        var RARITIES = {
+            COMMON: { name: "Обычная", color: "var(--rarity-common)", minLvl: 1, mult: 1.0 },
+            RARE: { name: "Редкая", color: "var(--rarity-rare)", minLvl: 5, mult: 1.8 },
+            EPIC: { name: "Эпическая", color: "var(--rarity-epic)", minLvl: 15, mult: 3.2 },
+            LEGENDARY: { name: "Легендарная", color: "var(--rarity-legendary)", minLvl: 30, mult: 6.0 },
+            MYTHIC: { name: "Мифическая", color: "var(--rarity-mythic)", minLvl: 45, mult: 12.0 }
+        };
+
+        var BRANDS = ["Cyber", "Apex", "Vortex", "Phantom", "Titan", "Shadow", "Neon", "Hyper", "Omega", "Retro"];
+        var MODELS = ["GT", "Rover", "Speedster", "Pickup", "Cruiser", "Phantom", "Interceptor", "Monstertruck", "Buggy", "Van"];
+
+        // Генератор 200+ машинок
+        function generateCarsDatabase() {
+            var db = [];
+            var idCounter = 1;
+
+            for(var lvl = 1; lvl <= 50; lvl++) {
+                var carsPerLevel = 4; // 50 уровней * 4 = 200 видов машин
+                for(var c = 0; c < carsPerLevel; c++) {
+                    var rarityKey = "COMMON";
+                    if(lvl >= 45 && c === 3) rarityKey = "MYTHIC";
+                    else if(lvl >= 30 && c >= 2) rarityKey = "LEGENDARY";
+                    else if(lvl >= 15 && c >= 2) rarityKey = "EPIC";
+                    else if(lvl >= 5 && c >= 1) rarityKey = "RARE";
+
+                    var brand = BRANDS[(idCounter * 3) % BRANDS.length];
+                    var model = MODELS[(idCounter * 7) % MODELS.length];
+                    var carName = brand + " " + model + " v" + idCounter;
+
+                    db.push({
+                        id: idCounter++,
+                        name: carName,
+                        minLevel: lvl,
+                        rarity: rarityKey,
+                        parts: [
+                            { id: 1, name: "🛞 Колесные диски", bolts: 3 + Math.floor(lvl/5), price: 100 * lvl },
+                            { id: 2, name: "🚪 Бронированная дверь", bolts: 4 + Math.floor(lvl/4), price: 180 * lvl },
+                            { id: 3, name: "⚙️ Форсированный ДВС", bolts: 6 + Math.floor(lvl/3), price: 350 * lvl }
+                        ]
+                    });
+                }
+            }
+            return db;
+        }
+
+        var CARS_DB = generateCarsDatabase();
+
+        var TOOLS_DATA = [
+            { name: "Гаечный ключ", baseCost: 200, power: 1 },
+            { name: "Усиленный трещоточный ключ", baseCost: 600, power: 2 },
+            { name: "Пневматический гайковерт", baseCost: 1800, power: 3 },
+            { name: "Аккумуляторный импакт", baseCost: 5000, power: 5 },
+            { name: "Гидравлический срез", baseCost: 15000, power: 8 },
+            { name: "Лазерный демонтажник", baseCost: 50000, power: 12 }
+        ];
+
+        window.onload = function() {
+            if(window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.ready();
+                window.Telegram.WebApp.expand();
+            }
+            updateUI();
+        };
+
+        function showToast(msg) {
+            var t = document.getElementById('toast');
+            if(t) {
+                t.innerText = msg; t.style.display = 'block';
+                setTimeout(function() { t.style.display = 'none'; }, 2200);
+            }
+        }
+
+        function openModal(id) { var m = document.getElementById(id); if(m) m.style.display = 'flex'; }
+        function closeModal(id) { var m = document.getElementById(id); if(m) m.style.display = 'none'; }
+
+        // Эмуляция Apple Pay / Истинного доната
+        function processPayment(title, price, gemsAmount) {
+            var confirmPay = confirm("🍎 Apple Pay\n\nОплата заказа: " + title + "\nСумма: " + price + "\n\nПодтвердить с помощью Touch ID / Face ID?");
+            if(confirmPay) {
+                game.gems += gemsAmount;
+                updateUI();
+                showToast("✅ Оплата прошла успешно! Получено: " + gemsAmount + " 💎");
+                closeModal('shop-modal');
+            }
+        }
+
+        function addXP(amount) {
+            game.xp += amount;
+            if(game.xp >= game.xpMax) {
+                game.xp -= game.xpMax;
+                game.level++;
+                game.xpMax = Math.floor(game.xpMax * 1.35);
+                showToast("🎉 ЛЕВЕЛ АП! Новый уровень: " + game.level + "!");
+            }
+            updateUI();
+        }
+
+        function orderCar() {
+            if(game.activeCar) return;
+
+            // Фильтруем доступные машины по уровню игрока
+            var available = CARS_DB.filter(function(c) { return c.minLevel <= game.level; });
+            var template = available[Math.floor(Math.random() * available.length)];
+            
+            var rarityInfo = RARITIES[template.rarity];
+
+            game.activeCar = {
+                name: template.name,
+                rarityKey: template.rarity,
+                rarityInfo: rarityInfo,
+                restoreCost: Math.floor(template.minLevel * 250),
+                parts: JSON.parse(JSON.stringify(template.parts))
+            };
+
+            var rb = document.getElementById('car-rarity-badge');
+            rb.innerText = rarityInfo.name;
+            rb.style.background = rarityInfo.color;
+            rb.style.display = 'block';
+
+            document.getElementById('car-title-text').innerText = template.name;
+            
+            // Генерируем красивую векторную реалистичную машинку
+            document.getElementById('car-box').innerHTML = getCarSVG(template.rarity);
+            document.getElementById('restore-btn').innerText = "🎨 РЕСТАВРИРОВАТЬ И ПРОДАТЬ (🪙 " + game.activeCar.restoreCost + ")";
+            document.getElementById('restore-btn').style.display = 'block';
+            document.getElementById('car-box').classList.remove('empty');
+            
+            updateUI();
+            showToast("🚗 Доставлен: " + template.name);
+        }
+
+        function getCarSVG(rarity) {
+            var color = "#78909c";
+            if(rarity === "RARE") color = "#0288d1";
+            if(rarity === "EPIC") color = "#7b1fa2";
+            if(rarity === "LEGENDARY") color = "#f57c00";
+            if(rarity === "MYTHIC") color = "#d32f2f";
+
+            return `<svg viewBox="0 0 300 120" fill="none" style="width:100%; height:100%;">
+                <ellipse cx="150" cy="100" rx="120" ry="10" fill="#000" opacity="0.6"/>
+                <path d="M30 80 L50 45 L110 35 L200 42 L260 65 L275 80 Z" fill="${color}"/>
+                <path d="M60 48 L105 40 L105 60 L45 60 Z" fill="#b0bec5" opacity="0.7"/>
+                <path d="M115 40 L185 43 L180 60 L115 60 Z" fill="#b0bec5" opacity="0.7"/>
+                <rect x="25" y="75" width="255" height="12" rx="4" fill="#263238"/>
+                <circle cx="70" cy="85" r="20" fill="#111" stroke="#eceff1" stroke-width="5"/>
+                <circle cx="220" cy="85" r="20" fill="#111" stroke="#eceff1" stroke-width="5"/>
+                <circle cx="70" cy="85" r="8" fill="${color}"/>
+                <circle cx="220" cy="85" r="8" fill="${color}"/>
+            </svg>`;
+        }
+
+        function tapPart(e, id) {
+            if(!game.activeCar) return;
+            var p = game.activeCar.parts.find(function(item){ return item.id === id; });
+
+            if(p && p.bolts > 0) {
+                var tInfo = getToolData();
+                p.bolts -= tInfo.power;
+                if(p.bolts < 0) p.bolts = 0;
+
+                var boost = 1;
+                var earned = Math.floor(p.price * game.activeCar.rarityInfo.mult * game.garageMultiplier * (1 + game.prestige * 0.5));
+
+                spawnFx(e, "+" + earned + "🪙");
+                addXP(15);
+
+                if(p.bolts <= 0) {
+                    game.money += earned;
+                }
+
+                var allDone = game.activeCar.parts.every(function(item){ return item.bolts <= 0; });
+
+                if(allDone) {
+                    addXP(50);
+                    clearCar();
+                    showToast("🎉 Авто полностью разобрано!");
+                }
+                updateUI();
+            }
+        }
+
+        // В чём смысл реставрации: Быстрая плата за ремонт и мгновенная продажа с высоким профитом
+        function restoreCar() {
+            if(!game.activeCar) return;
+            if(game.money >= game.activeCar.restoreCost) {
+                game.money -= game.activeCar.restoreCost;
+                
+                // Доход от продажи реставрированного авто (в 3-5 раз выше затрат!)
+                var profit = Math.floor(game.activeCar.restoreCost * 3.5 * game.activeCar.rarityInfo.mult);
+                game.money += profit;
+                addXP(100);
+
+                showToast("🎨 Авто реставрировано и продано с аукциона за 🪙 " + profit.toLocaleString() + "!");
+                clearCar();
+                updateUI();
+            } else {
+                showToast("⚠️ Не хватает 🪙 " + game.activeCar.restoreCost + " на реставрацию!");
+            }
+        }
+
+        function clearCar() {
+            game.activeCar = null;
+            document.getElementById('restore-btn').style.display = 'none';
+            document.getElementById('car-rarity-badge').style.display = 'none';
+            document.getElementById('car-box').classList.add('empty');
+            document.getElementById('car-box').innerHTML = '';
+            document.getElementById('car-title-text').innerText = "ОЖИДАНИЕ ЗАКАЗА";
+        }
+
+        function getToolData() {
+            var idx = Math.min(game.toolLvl - 1, TOOLS_DATA.length - 1);
+            var tool = TOOLS_DATA[idx];
+            var cost = Math.floor(tool.baseCost * Math.pow(1.6, game.toolLvl - 1));
+            return { name: tool.name, power: tool.power, cost: cost };
+        }
+
+        function upTool() {
+            var tInfo = getToolData();
+            if(game.money >= tInfo.cost) {
+                game.money -= tInfo.cost;
+                game.toolLvl++;
+                updateUI();
+                showToast("🧰 Инструмент улучшен!");
+            } else {
+                showToast("⚠️ Не хватает 🪙 " + tInfo.cost);
+            }
+        }
+
+        function selectGarage(style) {
+            if(!game.unlockedGarages.includes(style)) {
+                if(style === 2 && game.money >= 5000) {
+                    game.money -= 5000; game.unlockedGarages.push(2);
+                } else if(style === 3 && game.gems >= 25) {
+                    game.gems -= 25; game.unlockedGarages.push(3);
+                } else {
+                    showToast("⚠️ Недостаточно средств!"); return;
+                }
+            }
+            game.garageStyle = style;
+            game.garageMultiplier = style === 1 ? 1.0 : (style === 2 ? 1.15 : 1.30);
+            closeModal('garage-modal');
+            updateUI();
+            showToast("🏭 Стиль гаража изменён!");
+        }
+
+        function updateUI() {
+            document.getElementById('m-val').innerText = Math.floor(game.money).toLocaleString();
+            document.getElementById('g-val').innerText = game.gems;
+            document.getElementById('lvl-val').innerText = game.level;
+            document.getElementById('xp-val').innerText = game.xp;
+            document.getElementById('xp-max-val').innerText = game.xpMax;
+            document.getElementById('xp-fill').style.width = (game.xp / game.xpMax * 100) + "%";
+
+            var tInfo = getToolData();
+            document.getElementById('tool-lvl-display').innerText = game.toolLvl;
+            document.getElementById('tool-name').innerText = tInfo.name;
+            document.getElementById('tool-power-display').innerText = "-" + tInfo.power + " болт(ов)";
+            document.getElementById('tool-cost-display').innerText = tInfo.cost.toLocaleString();
+
+            document.getElementById('offline-val').innerText = "🪙 " + game.offlineCoins;
+            renderParts();
+        }
+
+        function renderParts() {
+            var b = document.getElementById('parts-box');
+            if(!b) return;
+            b.innerHTML = '';
+
+            if(!game.activeCar) {
+                b.innerHTML = '<div style="grid-column:span 3; text-align:center; font-size:0.75rem; color:var(--text-sub); align-self:center;">Нажми 🚗 ЗАКАЗ чтобы доставить машину</div>';
+                return;
+            }
+
+            game.activeCar.parts.forEach(function(p) {
+                var card = document.createElement('div');
+                card.className = "part-btn " + (p.bolts <= 0 ? "disabled" : "");
+                card.onclick = function(e) { tapPart(e, p.id); };
+                card.innerHTML = '<div class="part-name">' + p.name + '</div><div class="part-info">' + (p.bolts > 0 ? '🔩 x' + p.bolts : 'СНЯТО') + '</div>';
+                b.appendChild(card);
+            });
+        }
+
+        function spawnFx(e, text) {
+            var vp = document.getElementById('garage-viewport');
+            if(!vp || !e) return;
+            var rect = vp.getBoundingClientRect();
+            var ft = document.createElement('div');
+            ft.className = 'fx-text'; ft.innerText = text;
+            ft.style.left = (e.clientX - rect.left) + 'px';
+            ft.style.top = (e.clientY - rect.top) + 'px';
+            vp.appendChild(ft);
+            setTimeout(function() { ft.remove(); }, 600);
+        }
+
+        function spinWheel() {
+            if(game.wheelCooldown > 0) return;
+            game.wheelCooldown = 60;
+            game.money += 3000;
+            showToast("🎰 Выиграно 🪙 3,000!");
+            updateUI();
+        }
+
+        function claimContract() {
+            if(game.contractCooldown > 0) return;
+            game.contractCooldown = 60;
+            game.money += 2500;
+            closeModal('menu-modal');
+            updateUI();
+            showToast("📜 Контракт исполнен (+2,500 🪙)!");
+        }
+
+        function claimOffline() { game.money += game.offlineCoins; game.offlineCoins = 0; updateUI(); closeModal('vault-modal'); showToast("💼 Сейф опустошен!"); }
+        function doPrestige() { closeModal('menu-modal'); game.prestige++; game.money = 1000; clearCar(); updateUI(); showToast("🏛 Престиж активирован!"); }
+
+        setInterval(function() {
+            if(game.wheelCooldown > 0) game.wheelCooldown--;
+            if(game.contractCooldown > 0) game.contractCooldown--;
+        }, 1000);
+    </script>
+</body>
+</html>
