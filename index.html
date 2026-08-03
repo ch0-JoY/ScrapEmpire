@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Scrap Empire Ultimate - 20 Features Edition</title>
+    <style>
+        * { 
+            box-sizing: border-box; 
+            margin: 0; padding: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            user-select: none; -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            width: 100vw; height: 100dvh;
+            background: #0f0a18; color: #fff;
+            overflow: hidden; display: flex; flex-direction: column;
+            justify-content: space-between; padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+        }
+
+        /* ТОР-БАР И УГЛОВЫЕ КНОПКИ */
+        .top-container {
+            display: flex; flex-direction: column; gap: 4px; z-index: 10;
+        }
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center; gap: 4px; height: 36px;
+        }
+        .icon-btn {
+            background: #231935; border: 2px solid #523b75; border-radius: 10px;
+            width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; box-shadow: 0 3px 0 #120b1d; cursor: pointer; position: relative;
+        }
+        .icon-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #120b1d; }
+
+        .resource-pill {
+            background: #191026; border: 2px solid #3c2957; border-radius: 12px;
+            padding: 2px 8px; display: flex; align-items: center; gap: 4px;
+            font-size: 0.75rem; font-weight: bold; flex: 1; justify-content: center; height: 100%;
+        }
+
+        /* ОСНОВНАЯ ЗОНА ГАРАЖА С БОКОВЫМИ ПАНЕЛЯМИ */
+        .main-stage {
+            flex: 1; display: flex; gap: 6px; margin: 4px 0; position: relative; overflow: hidden;
+        }
+
+        .side-panel {
+            display: flex; flex-direction: column; gap: 6px; width: 42px; justify-content: center; z-index: 5;
+        }
+
+        .garage-screen {
+            flex: 1; background: #1a1228; border: 2px solid #432e63; border-radius: 14px;
+            position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+
+        canvas { width: 100%; height: 100%; display: block; }
+
+        /* ОВЕРКЛОК И ИНДИКАТОРЫ */
+        .overclock-bar {
+            position: absolute; top: 8px; left: 10px; right: 10px; height: 6px;
+            background: rgba(0,0,0,0.5); border-radius: 3px; overflow: hidden; border: 1px solid #ff9800;
+        }
+        .overclock-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #ff9800, #ff2a00); transition: width 0.1s; }
+
+        /* ДЕТАЛИ ДЛЯ СНЯТИЯ */
+        .parts-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+            height: 90px; max-height: 90px; flex-shrink: 0; z-index: 10;
+        }
+        .part-card {
+            background: linear-gradient(180deg, #e65100, #bf360c); border: 2px solid #ff8a65;
+            border-radius: 10px; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; padding: 2px; color: #fff; font-weight: bold; cursor: pointer;
+            box-shadow: 0 3px 0 #4e1402;
+        }
+        .part-card.disabled { background: #2a2038; border-color: #3f3254; opacity: 0.3; pointer-events: none; box-shadow: none; }
+        .part-card.rusty { border-color: #795548; background: linear-gradient(180deg, #5d4037, #3e2723); }
+
+        /* НИЖНЯЯ ПАНЕЛЬ */
+        .bottom-nav {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; height: 58px; flex-shrink: 0; z-index: 10;
+        }
+        .nav-btn {
+            background: linear-gradient(180deg, #0288d1, #01579b); border: 2px solid #81d4fa;
+            border-radius: 10px; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; font-size: 0.6rem; font-weight: bold; box-shadow: 0 3px 0 #002f56;
+            cursor: pointer;
+        }
+        .nav-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #002f56; }
+
+        /* МОДАЛКИ */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none;
+            justify-content: center; align-items: center; z-index: 100; padding: 12px;
+        }
+        .modal-card {
+            background: #2b1f40; border: 2px solid #6a499c; border-radius: 16px;
+            width: 100%; max-width: 360px; padding: 14px; max-height: 80vh; overflow-y: auto;
+        }
+        .modal-header { font-size: 1rem; color: #ffca28; text-align: center; font-weight: bold; margin-bottom: 10px; }
+        .close-btn { background: #d32f2f; color: white; border: none; padding: 8px; border-radius: 8px; width: 100%; margin-top: 10px; font-weight: bold; }
+
+        .toast {
+            position: fixed; top: 50px; left: 50%; transform: translateX(-50%);
+            background: #4caf50; color: #fff; padding: 6px 14px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: bold; display: none; z-index: 200; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toast" id="toast">Уведомление</div>
+
+    <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
+    <div class="top-container">
+        <div class="top-bar">
+            <div class="icon-btn" onclick="petDog()" title="Пёсик">🐶</div>
+            <div class="icon-btn" onclick="openModal('radio-modal')" title="Радио">🎧</div>
+            
+            <div class="resource-pill" style="color:#ffca28">🪙 <span id="m-val">1,000</span></div>
+            <div class="resource-pill" style="color:#00e5ff">💎 <span id="g-val">10</span></div>
+
+            <div class="icon-btn" onclick="openModal('spin-modal')" title="Колесо">🎰</div>
+            <div class="icon-btn" onclick="openModal('garage-modal')" title="Посты">🏢</div>
+        </div>
+    </div>
+
+    <!-- ЦЕНТРАЛЬНАЯ ЧАСТЬ С БОКОВЫМИ КНОПКАМИ -->
+    <div class="main-stage">
+        <!-- ЛЕВАЯ ПАНЕЛЬ -->
+        <div class="side-panel">
+            <div class="icon-btn" onclick="openModal('contracts-modal')" title="Контракты">📜</div>
+            <div class="icon-btn" onclick="openModal('stock-modal')" title="Биржа">📊</div>
+            <div class="icon-btn" id="inspect-btn" onclick="triggerInspection()" title="Инспекция">🚨</div>
+        </div>
+
+        <!-- СЦЕНА ГАРАЖА -->
+        <div class="garage-screen" id="garage-box">
+            <div class="overclock-bar"><div class="overclock-fill" id="oc-fill"></div></div>
+            <canvas id="stageCanvas"></canvas>
+            
+            <button id="restore-btn" onclick="restoreCar()" style="position:absolute; bottom:10px; display:none; background:#9c27b0; border:1px solid #e1bee7; color:#fff; font-size:0.65rem; padding:4px 8px; border-radius:8px; font-weight:bold;">🎨 Реставрация (x5 🪙)</button>
+        </div>
+
+        <!-- ПРАВАЯ ПАНЕЛЬ -->
+        <div class="side-panel">
+            <div class="icon-btn" onclick="triggerC4()" title="C4 Взрыв">💥</div>
+            <div class="icon-btn" onclick="openModal('tools-modal')" title="Инструменты">🧰</div>
+            <div class="icon-btn" onclick="openModal('prestige-modal')" title="Престиж">🏛</div>
+        </div>
+    </div>
+
+    <!-- ДЕТАЛИ -->
+    <div class="parts-grid" id="parts-box"></div>
+
+    <!-- НИЖНЕЕ МЕНЮ -->
+    <div class="bottom-nav">
+        <div class="nav-btn" onclick="orderCar()">🚗<br>ЗАКАЗ</div>
+        <div class="nav-btn" onclick="openModal('tow-modal')">🚛<br>ЭВАКУАТОР</div>
+        <div class="nav-btn" onclick="openModal('vault-modal')">💼<br>ОФФЛАЙН</div>
+        <div class="nav-btn" onclick="openModal('top-modal')">📈<br>ЛИДЕРЫ</div>
+        <div class="nav-btn" onclick="openModal('settings-modal')">⚙️<br>ОПЦИИ</div>
+    </div>
+
+    <!-- МОДАЛЬНЫЕ ОКНА -->
+    <div class="modal-overlay" id="radio-modal"><div class="modal-card"><div class="modal-header">🎧 ГАРАЖНОЕ РАДИО</div><button onclick="setRadio('Synthwave')" class="close-btn" style="background:#8e24aa">Synthwave FM</button><button onclick="setRadio('Lo-Fi')" class="close-btn" style="background:#3949ab">Lo-Fi Beats</button><button class="close-btn" onclick="closeModal('radio-modal')">ЗАКРЫТЬ</button></div></div>
+    <div class="modal-overlay" id="spin-modal"><div class="modal-card"><div class="modal-header">🎰 КОЛЕСО ФОРТУНЫ</div><p style="text-align:center; font-size:0.8rem">Крути и получай призы каждый день!</p><button onclick="spinWheel()" class="close-btn" style="background:#ff9800">КРУТИТЬ (FREE)</button><button class="close-btn" onclick="closeModal('spin-modal')">ЗАКРЫТЬ</button></div></div>
+    <div class="modal-overlay" id="tools-modal"><div class="modal-card"><div class="modal-header">🧰 НАБОР ИНСТРУМЕНТОВ</div><p style="font-size:0.8rem">Текущий: <b id="tool-name">Обычный ключ</b></p><button onclick="upTool()" class="close-btn" style="background:#4caf50">Улучшить (🪙 500)</button><button class="close-btn" onclick="closeModal('tools-modal')">ЗАКРЫТЬ</button></div></div>
+    <div class="modal-overlay" id="prestige-modal"><div class="modal-card"><div class="modal-header">🏛 ПРЕСТИЖ</div><p style="font-size:0.75rem; text-align:center;">Сбрось прогресс и получи 🔑 Золотой Гаечный Ключ (+50% к доходу навсегда)!</p><button onclick="doPrestige()" class="close-btn" style="background:#e53935">СБРОСИТЬ И ПОЛУЧИТЬ БОНУС</button><button class="close-btn" onclick="closeModal('prestige-modal')">ЗАКРЫТЬ</button></div></div>
+    <div class="modal-overlay" id="contracts-modal"><div class="modal-card"><div class="modal-header">📜 КОНТРАКТЫ</div><p style="font-size:0.8rem">Сдать 3 мотора $\rightarrow$ 🪙 2,500</p><button onclick="claimContract()" class="close-btn" style="background:#009688">СДАТЬ КОНТРАКТ</button><button class="close-btn" onclick="closeModal('contracts-modal')">ЗАКРЫТЬ</button></div></div>
+    <div class="modal-overlay" id="vault-modal"><div class="modal-card"><div class="modal-header">💼 ОФФЛАЙН СЕЙФ</div><p style="font-size:0.8rem; text-align:center;">Накоплено за время отсутствия:<br><b style="color:#ffca28; font-size:1.2rem;" id="offline-val">🪙 0</b></p><button onclick="claimOffline()" class="close-btn" style="background:#4caf50">ЗАБРАТЬ</button><button class="close-btn" onclick="closeModal('vault-modal')">ЗАКРЫТЬ</button></div></div>
+    <div class="modal-overlay" id="settings-modal"><div class="modal-card"><div class="modal-header">⚙️ НАСТРОЙКИ</div><button onclick="resetAll()" class="close-btn" style="background:#d32f2f">Сбросить сохранение</button><button class="close-btn" onclick="closeModal('settings-modal')">ЗАКРЫТЬ</button></div></div>
+
+    <script>
+        let game = {
+            money: 1000, gems: 10, toolLvl: 1, prestige: 0,
+            oc: 0, activeCar: null, offlineCoins: 450
+        };
+
+        const TOOLS = ["Обычный ключ", "Электрогайковерт", "Лазерный резак"];
+
+        function showToast(m) {
+            const t = document.getElementById('toast');
+            t.innerText = m; t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 1600);
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function updateUI() {
+            document.getElementById('m-val').innerText = Math.floor(game.money).toLocaleString();
+            document.getElementById('g-val').innerText = game.gems;
+            document.getElementById('tool-name').innerText = TOOLS[Math.min(game.toolLvl-1, 2)];
+            document.getElementById('offline-val').innerText = `🪙 ${game.offlineCoins}`;
+            renderParts();
+        }
+
+        function petDog() { showToast("🐶 Пёсик виляет хвостом! Удача +10%"); }
+        function setRadio(station) { closeModal('radio-modal'); showToast(`🎧 Играет: ${station}`); }
+        function spinWheel() { closeModal('spin-modal'); game.gems += 3; updateUI(); showToast("🎰 Вы выиграли 💎 3!"); }
+        
+        function upTool() {
+            if(game.money >= 500) { game.money -= 500; game.toolLvl++; updateUI(); closeModal('tools-modal'); showToast("🧰 Инструмент улучшен!"); }
+            else showToast("⚠️ Мало денег!");
+        }
+
+        function triggerC4() {
+            if(game.gems >= 2 && game.activeCar) {
+                game.gems -= 2; game.money += 1500; game.activeCar = null;
+                updateUI(); showToast("💥 БУМ! Машина взорвана на лом!");
+            } else showToast("⚠️ Нужно 💎 2 и машина в гараже!");
+        }
+
+        function triggerInspection() { showToast("🚨 Инспекция пройдена! Штрафов нет."); }
+        function claimContract() { game.money += 2500; updateUI(); closeModal('contracts-modal'); showToast("📜 Контракт выполнен!"); }
+        function claimOffline() { game.money += game.offlineCoins; game.offlineCoins = 0; updateUI(); closeModal('vault-modal'); showToast("💼 Монеты забраны!"); }
+
+        function orderCar() {
+            if(game.activeCar) return;
+            game.activeCar = {
+                name: "Седан",
+                parts: [
+                    { id: 1, name: "🛞 Колесо", bolts: 3, price: 150, rusty: false },
+                    { id: 2, name: "🚪 Дверь", bolts: 2, price: 250, rusty: true },
+                    { id: 3, name: "🛠 Мотор", bolts: 4, price: 500, rusty: false }
+                ]
+            };
+            document.getElementById('restore-btn').style.display = 'block';
+            updateUI(); showToast("🚗 Машина доставлена!");
+        }
+
+        function restoreCar() {
+            if(!game.activeCar) return;
+            game.money += 2000; game.activeCar = null;
+            document.getElementById('restore-btn').style.display = 'none';
+            updateUI(); showToast("🎨 Машина отреставрирована и продана!");
+        }
+
+        function tapPart(id) {
+            if(!game.activeCar) return;
+            let p = game.activeCar.parts.find(x => x.id === id);
+            if(p && p.bolts > 0) {
+                p.bolts -= game.toolLvl;
+                game.oc = Math.min(100, game.oc + 15);
+                document.getElementById('oc-fill').style.width = `${game.oc}%`;
+
+                if(p.bolts <= 0) {
+                    game.money += p.price * (1 + game.prestige * 0.5);
+                }
+                if(game.activeCar.parts.every(x => x.bolts <= 0)) {
+                    game.activeCar = null;
+                    document.getElementById('restore-btn').style.display = 'none';
+                    showToast("✅ Разобрано полностью!");
+                }
+                updateUI();
+            }
+        }
+
+        function renderParts() {
+            const b = document.getElementById('parts-box'); b.innerHTML = '';
+            if(!game.activeCar) { b.innerHTML = '<div style="grid-column:span 3; text-align:center; font-size:0.75rem; opacity:0.5; align-self:center;">Закажите авто для разборки</div>'; return; }
+            
+            game.activeCar.parts.forEach(p => {
+                const card = document.createElement('div');
+                card.className = `part-card ${p.bolts <= 0 ? 'disabled' : ''} ${p.rusty ? 'rusty' : ''}`;
+                card.onclick = () => tapPart(p.id);
+                card.innerHTML = `<div>${p.name}</div><div style="font-size:0.6rem; color:#ffeb3b">${p.bolts > 0 ? '🔩 x'+p.bolts : '✓'}</div>`;
+                b.appendChild(card);
+            });
+        }
+
+        function doPrestige() {
+            game.prestige++; game.money = 1000; game.activeCar = null;
+            closeModal('prestige-modal'); updateUI(); showToast("🏛 Престиж получен! Доход +50%");
+        }
+
+        function resetAll() { localStorage.clear(); location.reload(); }
+
+        // Оверклок затухание
+        setInterval(() => {
+            if(game.oc > 0) { game.oc = Math.max(0, game.oc - 5); document.getElementById('oc-fill').style.width = `${game.oc}%`; }
+        }, 400);
+
+        // Холст с простым рендером
+        const canvas = document.getElementById('stageCanvas');
+        const ctx = canvas.getContext('2d');
+        function drawStage() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if(game.activeCar) {
+                ctx.fillStyle = "#e53935";
+                ctx.fillRect(canvas.width/2 - 40, canvas.height/2 - 20, 80, 40);
+                ctx.strokeStyle = "#fff"; ctx.strokeRect(canvas.width/2 - 40, canvas.height/2 - 20, 80, 40);
+            }
+            requestAnimationFrame(drawStage);
+        }
+        drawStage();
+        updateUI();
+    </script>
+</body>
+</html>
