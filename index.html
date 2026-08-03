@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Scrap Empire: Neon Garage</title>
+    <style>
+        :root {
+            --bg-dark: #0b0d17;
+            --card-bg: #161b2e;
+            --accent-purple: #7c4dff;
+            --accent-cyan: #00e5ff;
+            --accent-gold: #ffb300;
+            --accent-red: #ff1744;
+            --text-main: #f0f4f8;
+            --text-sub: #8a99ad;
+        }
+
+        * {
+            box-sizing: border-box; margin: 0; padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            user-select: none; -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            width: 100vw; height: 100dvh;
+            background: var(--bg-dark); color: var(--text-main);
+            overflow: hidden; display: flex; flex-direction: column;
+            justify-content: space-between; padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+        }
+
+        /* ТОР-БАР С РЕСУРСАМИ */
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center; gap: 8px; height: 44px;
+        }
+
+        .resource-card {
+            background: rgba(22, 27, 46, 0.85); border: 1.5px solid rgba(124, 77, 255, 0.3);
+            backdrop-filter: blur(10px); border-radius: 14px;
+            padding: 4px 12px; display: flex; align-items: center; gap: 6px;
+            font-size: 0.85rem; font-weight: 800; flex: 1; justify-content: center; height: 100%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .icon-btn {
+            background: linear-gradient(135deg, #1e2640, #13192b);
+            border: 1.5px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px; width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; cursor: pointer; position: relative;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+            transition: transform 0.1s;
+        }
+        .icon-btn:active { transform: scale(0.92); }
+
+        /* ГЛАВНЫЙ ЭКРАН И БОКОВЫЕ ПАНЕЛИ */
+        .stage-container {
+            flex: 1; display: flex; gap: 8px; margin: 8px 0; position: relative;
+        }
+
+        .side-bar {
+            display: flex; flex-direction: column; gap: 10px; width: 44px; justify-content: center; z-index: 5;
+        }
+
+        .garage-viewport {
+            flex: 1; background: radial-gradient(circle at center, #1a2238 0%, #0b0d17 100%);
+            border: 2px solid rgba(124, 77, 255, 0.2); border-radius: 20px;
+            position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            overflow: hidden; box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+        }
+
+        /* ОВЕРКЛОК И ИНДИКАТОРЫ */
+        .oc-container {
+            position: absolute; top: 12px; left: 16px; right: 16px; height: 8px;
+            background: rgba(0,0,0,0.6); border-radius: 4px; overflow: hidden;
+            border: 1px solid rgba(255, 179, 0, 0.4);
+        }
+        .oc-bar {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, #ffb300, #ff1744);
+            box-shadow: 0 0 10px #ff1744; transition: width 0.15s ease-out;
+        }
+
+        /* 2D ВЕКТОРНАЯ МАШИНА С АНИМАЦИЕЙ */
+        .car-display {
+            width: 220px; height: 110px; position: relative;
+            transition: transform 0.1s ease;
+        }
+        .car-display.shake { transform: scale(0.97) translateY(2px); }
+
+        .car-svg { width: 100%; height: 100%; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.7)); }
+
+        /* ВЫЛЕТАЮЩИЕ ЧАСТИЦЫ И ЦИФРЫ */
+        .floating-text {
+            position: absolute; color: var(--accent-gold); font-weight: 900;
+            font-size: 1.1rem; pointer-events: none; animation: floatUp 0.8s ease-out forwards;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8); z-index: 50;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-40px) scale(1.2); }
+        }
+
+        .spark {
+            position: absolute; width: 6px; height: 6px; background: var(--accent-cyan);
+            border-radius: 50%; pointer-events: none; animation: sparkFly 0.4s ease-out forwards;
+            box-shadow: 0 0 8px var(--accent-cyan);
+        }
+        @keyframes sparkFly {
+            0% { opacity: 1; transform: translate(0, 0) scale(1); }
+            100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0); }
+        }
+
+        /* СЕТКА ДЕТАЛЕЙ ДЛЯ ТАПА */
+        .parts-container {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+            height: 100px; flex-shrink: 0; margin-bottom: 8px;
+        }
+
+        .part-card {
+            background: linear-gradient(145deg, #1d253d, #141a2c);
+            border: 1.5px solid rgba(255, 255, 255, 0.08); border-radius: 14px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 6px; cursor: pointer; transition: all 0.15s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); position: relative; overflow: hidden;
+        }
+        .part-card:active { transform: scale(0.95); }
+        .part-card.rusty { border-color: rgba(255, 87, 34, 0.5); background: linear-gradient(145deg, #2e1c18, #1a100e); }
+        .part-card.disabled { opacity: 0.25; pointer-events: none; filter: grayscale(1); }
+
+        .part-title { font-size: 0.75rem; font-weight: 700; color: var(--text-main); margin-bottom: 2px; }
+        .part-bolts { font-size: 0.65rem; color: var(--accent-cyan); font-weight: 800; }
+
+        /* НИЖНЕЕ МЕНЮ */
+        .bottom-nav {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; height: 60px; flex-shrink: 0;
+        }
+
+        .nav-card {
+            background: linear-gradient(180deg, #222c4a, #151b2e);
+            border: 1.5px solid rgba(255, 255, 255, 0.1); border-radius: 14px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 2px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            transition: all 0.15s ease;
+        }
+        .nav-card:active { transform: scale(0.92); }
+        .nav-card .icon { font-size: 1.2rem; }
+        .nav-card .label { font-size: 0.58rem; font-weight: 800; color: var(--text-sub); text-transform: uppercase; }
+
+        /* КНОПКА РЕСТАВРАЦИИ */
+        .restore-btn {
+            position: absolute; bottom: 12px; background: linear-gradient(90deg, #aa00ff, #7c4dff);
+            border: none; color: #fff; font-weight: 800; font-size: 0.75rem;
+            padding: 8px 16px; border-radius: 20px; box-shadow: 0 4px 15px rgba(124, 77, 255, 0.5);
+            cursor: pointer; display: none; animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* МОДАЛЬНЫЕ ОКНА */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(5, 7, 13, 0.85);
+            backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center;
+            z-index: 100; padding: 16px; animation: fadeIn 0.2s ease-out;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .modal-card {
+            background: #141a2c; border: 1.5px solid rgba(124, 77, 255, 0.3);
+            border-radius: 24px; width: 100%; max-width: 350px; padding: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 12px;
+        }
+        .modal-title { font-size: 1.1rem; font-weight: 900; color: var(--accent-gold); text-align: center; text-transform: uppercase; }
+        .modal-body { font-size: 0.8rem; color: var(--text-sub); text-align: center; line-height: 1.4; }
+
+        .btn-action {
+            background: linear-gradient(90deg, #00c853, #00e676); border: none;
+            color: #000; font-weight: 800; font-size: 0.85rem; padding: 12px;
+            border-radius: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,230,118,0.3);
+        }
+        .btn-close {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-sub); font-weight: 700; font-size: 0.75rem; padding: 10px;
+            border-radius: 12px; cursor: pointer;
+        }
+
+        /* TOAST */
+        .toast {
+            position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+            background: var(--accent-cyan); color: #000; padding: 8px 18px; border-radius: 30px;
+            font-size: 0.75rem; font-weight: 800; display: none; z-index: 200;
+            box-shadow: 0 4px 15px rgba(0,229,255,0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toast" id="toast">Сообщение</div>
+
+    <!-- ТОР-БАР -->
+    <div class="top-bar">
+        <div class="icon-btn" onclick="petDog()">🐶</div>
+        <div class="icon-btn" onclick="openModal('radio-modal')">🎧</div>
+        
+        <div class="resource-card" style="color: var(--accent-gold)">🪙 <span id="m-val">1,000</span></div>
+        <div class="resource-card" style="color: var(--accent-cyan)">💎 <span id="g-val">10</span></div>
+
+        <div class="icon-btn" onclick="openModal('spin-modal')">🎰</div>
+        <div class="icon-btn" onclick="openModal('garage-modal')">🏢</div>
+    </div>
+
+    <!-- СЦЕНА ГАРАЖА -->
+    <div class="stage-container">
+        <!-- ЛЕВАЯ ПАНЕЛЬ -->
+        <div class="side-bar">
+            <div class="icon-btn" onclick="openModal('contracts-modal')">📜</div>
+            <div class="icon-btn" onclick="openModal('stock-modal')">📊</div>
+            <div class="icon-btn" onclick="triggerInspection()">🚨</div>
+        </div>
+
+        <!-- ЦЕНТРАЛЬНЫЙ ВИУПОРТ -->
+        <div class="garage-viewport" id="viewport">
+            <div class="oc-container"><div class="oc-bar" id="oc-fill"></div></div>
+            
+            <div class="car-display" id="car-box">
+                <!-- ВЕКТОРНАЯ 2D ТАЧКА (SVG) -->
+                <svg class="car-svg" viewBox="0 0 200 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 60 L40 30 L130 30 L170 50 L190 60 L190 75 L10 75 Z" fill="#7c4dff"/>
+                    <path d="M45 35 L80 35 L80 55 L30 55 Z" fill="#00e5ff" opacity="0.6"/>
+                    <path d="M90 35 L125 35 L155 55 L90 55 Z" fill="#00e5ff" opacity="0.6"/>
+                    <circle cx="45" cy="75" r="16" fill="#111" stroke="#555" stroke-width="4"/>
+                    <circle cx="155" cy="75" r="16" fill="#111" stroke="#555" stroke-width="4"/>
+                    <circle cx="45" cy="75" r="6" fill="#aaa"/>
+                    <circle cx="155" cy="75" r="6" fill="#aaa"/>
+                </svg>
+            </div>
+
+            <button class="restore-btn" id="restore-btn" onclick="restoreCar()">🎨 РЕСТАВРИРОВАТЬ (x5 🪙)</button>
+        </div>
+
+        <!-- ПРАВАЯ ПАНЕЛЬ -->
+        <div class="side-bar">
+            <div class="icon-btn" onclick="triggerC4()">💥</div>
+            <div class="icon-btn" onclick="openModal('tools-modal')">🧰</div>
+            <div class="icon-btn" onclick="openModal('prestige-modal')">🏛</div>
+        </div>
+    </div>
+
+    <!-- ДЕТАЛИ -->
+    <div class="parts-container" id="parts-box"></div>
+
+    <!-- НИЖНЕЕ МЕНЮ -->
+    <div class="bottom-nav">
+        <div class="nav-card" onclick="orderCar()">
+            <div class="icon">🚗</div>
+            <div class="label">Заказ</div>
+        </div>
+        <div class="nav-card" onclick="openModal('tow-modal')">
+            <div class="icon">🚛</div>
+            <div class="label">Эвакуатор</div>
+        </div>
+        <div class="nav-card" onclick="openModal('vault-modal')">
+            <div class="icon">💼</div>
+            <div class="label">Сейф</div>
+        </div>
+        <div class="nav-card" onclick="openModal('top-modal')">
+            <div class="icon">📈</div>
+            <div class="label">Топ</div>
+        </div>
+        <div class="nav-card" onclick="openModal('settings-modal')">
+            <div class="icon">⚙️</div>
+            <div class="label">Опции</div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКИ -->
+    <div class="modal-overlay" id="tools-modal">
+        <div class="modal-card">
+            <div class="modal-title">🧰 ИНСТРУМЕНТЫ</div>
+            <div class="modal-body">Текущий инструмент:<br><b style="color:#fff; font-size:1rem;" id="tool-name">Ключ</b></div>
+            <button class="btn-action" onclick="upTool()">УЛУЧШИТЬ (🪙 500)</button>
+            <button class="btn-close" onclick="closeModal('tools-modal')">ЗАКРЫТЬ</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="spin-modal">
+        <div class="modal-card">
+            <div class="modal-title">🎰 КОЛЕСО ФОРТУНЫ</div>
+            <div class="modal-body">Крути колесо и получай ценные кристаллы!</div>
+            <button class="btn-action" onclick="spinWheel()">КРУТИТЬ (БЕСПЛАТНО)</button>
+            <button class="btn-close" onclick="closeModal('spin-modal')">ЗАКРЫТЬ</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="vault-modal">
+        <div class="modal-card">
+            <div class="modal-title">💼 ОФФЛАЙН СЕЙФ</div>
+            <div class="modal-body">Накопленный доход:<br><b style="color:var(--accent-gold); font-size:1.4rem;" id="offline-val">🪙 0</b></div>
+            <button class="btn-action" onclick="claimOffline()">ЗАБРАТЬ</button>
+            <button class="btn-close" onclick="closeModal('vault-modal')">ЗАКРЫТЬ</button>
+        </div>
+    </div>
+
+    <script>
+        let game = {
+            money: 1000, gems: 10, toolLvl: 1, prestige: 0,
+            oc: 0, activeCar: null, offlineCoins: 850
+        };
+
+        const TOOLS = ["Обычный ключ", "Электрогайковерт", "Лазерный резак"];
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg; t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 1800);
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function updateUI() {
+            document.getElementById('m-val').innerText = Math.floor(game.money).toLocaleString();
+            document.getElementById('g-val').innerText = game.gems;
+            document.getElementById('tool-name').innerText = TOOLS[Math.min(game.toolLvl-1, 2)];
+            document.getElementById('offline-val').innerText = `🪙 ${game.offlineCoins}`;
+            renderParts();
+        }
+
+        function createFx(e, text) {
+            const vp = document.getElementById('viewport');
+            const rect = vp.getBoundingClientRect();
+            
+            // Вылетающий текст +150🪙
+            const ft = document.createElement('div');
+            ft.className = 'floating-text';
+            ft.innerText = text;
+            ft.style.left = (e.clientX - rect.left) + 'px';
+            ft.style.top = (e.clientY - rect.top) + 'px';
+            vp.appendChild(ft);
+            setTimeout(() => ft.remove(), 800);
+
+            // Искры
+            for(let i = 0; i < 6; i++) {
+                const sp = document.createElement('div');
+                sp.className = 'spark';
+                sp.style.left = (e.clientX - rect.left) + 'px';
+                sp.style.top = (e.clientY - rect.top) + 'px';
+                sp.style.setProperty('--dx', (Math.random()*80 - 40) + 'px');
+                sp.style.setProperty('--dy', (Math.random()*80 - 40) + 'px');
+                vp.appendChild(sp);
+                setTimeout(() => sp.remove(), 400);
+            }
+
+            // Вздрагивание машины
+            const cb = document.getElementById('car-box');
+            cb.classList.add('shake');
+            setTimeout(() => cb.classList.remove('shake'), 100);
+        }
+
+        function orderCar() {
+            if(game.activeCar) return;
+            game.activeCar = {
+                name: "Cyber Sedan",
+                parts: [
+                    { id: 1, name: "🛞 Колеса", bolts: 4, price: 200, rusty: false },
+                    { id: 2, name: "🚪 Двери", bolts: 3, price: 350, rusty: true },
+                    { id: 3, name: "⚡ Мотор", bolts: 5, price: 700, rusty: false }
+                ]
+            };
+            document.getElementById('restore-btn').style.display = 'block';
+            document.getElementById('car-box').style.opacity = '1';
+            updateUI(); showToast("🚗 Доставлен новый Cyber Sedan!");
+        }
+
+        function tapPart(e, id) {
+            if(!game.activeCar) return;
+            let p = game.activeCar.parts.find(x => x.id === id);
+            if(p && p.bolts > 0) {
+                p.bolts -= game.toolLvl;
+                game.oc = Math.min(100, game.oc + 12);
+                document.getElementById('oc-fill').style.width = `${game.oc}%`;
+
+                createFx(e, `+${p.price}🪙`);
+
+                if(p.bolts <= 0) {
+                    game.money += p.price * (1 + game.prestige * 0.5);
+                }
+                if(game.activeCar.parts.every(x => x.bolts <= 0)) {
+                    game.activeCar = null;
+                    document.getElementById('restore-btn').style.display = 'none';
+                    document.getElementById('car-box').style.opacity = '0.2';
+                    showToast("🎉 Авто полностью разобрано!");
+                }
+                updateUI();
+            }
+        }
+
+        function restoreCar() {
+            if(!game.activeCar) return;
+            game.money += 3000; game.activeCar = null;
+            document.getElementById('restore-btn').style.display = 'none';
+            document.getElementById('car-box').style.opacity = '0.2';
+            updateUI(); showToast("🎨 Машина реставрирована и продана!");
+        }
+
+        function renderParts() {
+            const b = document.getElementById('parts-box'); b.innerHTML = '';
+            if(!game.activeCar) { 
+                b.innerHTML = '<div style="grid-column:span 3; text-align:center; font-size:0.75rem; color:var(--text-sub); align-self:center;">Нажми 🚗 ЗАКАЗ чтобы пригнать авто</div>'; 
+                return; 
+            }
+            
+            game.activeCar.parts.forEach(p => {
+                const card = document.createElement('div');
+                card.className = `part-card ${p.bolts <= 0 ? 'disabled' : ''} ${p.rusty ? 'rusty' : ''}`;
+                card.onclick = (e) => tapPart(e, p.id);
+                card.innerHTML = `<div class="part-title">${p.name}</div><div class="part-bolts">${p.bolts > 0 ? '🔩 x'+p.bolts : 'СНЯТО'}</div>`;
+                b.appendChild(card);
+            });
+        }
+
+        function petDog() { showToast("🐶 Пёсик рад! Шанс критического тапа +15%"); }
+        function spinWheel() { closeModal('spin-modal'); game.gems += 5; updateUI(); showToast("🎰 Выиграно 💎 5 кристаллов!"); }
+        function upTool() { if(game.money >= 500) { game.money -= 500; game.toolLvl++; updateUI(); closeModal('tools-modal'); showToast("🧰 Инструмент прокачан!"); } }
+        function claimOffline() { game.money += game.offlineCoins; game.offlineCoins = 0; updateUI(); closeModal('vault-modal'); showToast("💼 Доход забран!"); }
+        function triggerC4() { if(game.gems >= 2 && game.activeCar) { game.gems -= 2; game.money += 2000; game.activeCar = null; document.getElementById('car-box').style.opacity = '0.2'; updateUI(); showToast("💥 ВЗРЫВ! Лом собран!"); } }
+        function triggerInspection() { showToast("🚨 Экологическая инспекция пройдена!"); }
+
+        setInterval(() => {
+            if(game.oc > 0) { game.oc = Math.max(0, game.oc - 4); document.getElementById('oc-fill').style.width = `${game.oc}%`; }
+        }, 300);
+
+        updateUI();
+        document.getElementById('car-box').style.opacity = '0.2';
+    </script>
+</body>
+</html>
