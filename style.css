@@ -1,0 +1,94 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #151922;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  color: #fff;
+}
+
+.phone {
+  width: 390px;
+  max-width: 100%;
+  background: #252d3d;
+  border-radius: 24px;
+  padding: 16px;
+  box-shadow: 0 15px 40px rgba(0,0,0,.5);
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cash {
+  background: #1d2432;
+  padding: 8px 14px;
+  border-radius: 12px;
+  color: #72ff8c;
+  font-weight: bold;
+}
+
+#game {
+  height: 520px;
+  background: linear-gradient(#3c465e, #2a3346);
+  border-radius: 18px;
+  margin: 15px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.crate {
+  font-size: 96px;
+  transition: .25s;
+  cursor: pointer;
+}
+
+.crate:active {
+  transform: scale(.9);
+}
+
+.car {
+  font-size: 110px;
+  animation: pop .35s;
+}
+
+button {
+  border: none;
+  background: #394559;
+  color: white;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.action {
+  background: #22c55e;
+  padding: 14px 22px;
+  margin-top: 18px;
+}
+
+nav {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(.3);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
