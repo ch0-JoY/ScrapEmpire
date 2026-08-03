@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авторазборка Симулятор</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+        body { background: #1a1a24; color: #fff; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        /* HEADER */
+        header { background: #252538; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #3d3d5c; }
+        .currency { font-size: 1.2rem; font-weight: bold; display: flex; gap: 20px; }
+        .money { color: #4caf50; }
+        .gems { color: #00bcd4; }
+
+        /* MAIN CONTAINER */
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+
+        /* LEFT PANEL: SHOP & UPGRADES */
+        .panel { width: 320px; background: #20202e; border-right: 2px solid #3d3d5c; display: flex; flex-direction: column; padding: 15px; gap: 15px; overflow-y: auto; }
+        .panel h2 { font-size: 1.1rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+
+        .btn { background: #3f51b5; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; }
+        .btn:hover { background: #5c6bc0; }
+        .btn:disabled { background: #444; cursor: not-allowed; opacity: 0.6; }
+        .btn-buy { background: #2e7d32; }
+        .btn-buy:hover { background: #388e3c; }
+
+        /* GAME AREA */
+        .game-area { flex: 1; display: flex; flex-direction: column; position: relative; background: #121219; }
+        canvas { width: 100%; height: 100%; display: block; }
+
+        /* OVERLAY STATUS */
+        .status-overlay { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 10px 20px; border-radius: 20px; border: 1px solid #555; pointer-events: none; font-size: 1.1rem; }
+
+        /* RIGHT PANEL: CAR PARTS */
+        .parts-panel { width: 300px; background: #20202e; border-left: 2px solid #3d3d5c; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .part-card { background: #2c2c3e; padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #444; }
+        .part-card.removed { opacity: 0.3; filter: grayscale(1); }
+        .part-info { display: flex; flex-direction: column; }
+        .part-name { font-weight: bold; }
+        .part-price { font-size: 0.85rem; color: #4caf50; }
+        .part-btn { background: #e53935; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+        .part-btn:hover { background: #f44336; }
+
+        /* CAR RARITY COLORS */
+        .rarity-common { color: #8bc34a; }
+        .rarity-rare { color: #2196f3; }
+        .rarity-epic { color: #9c27b0; }
+        .rarity-legendary { color: #ff9800; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🛠 Auto Salvage Simulator</h1>
+        <div class="currency">
+            <span class="money">💵 $<span id="money">500</span></span>
+            <span class="gems">💎 <span id="gems">10</span></span>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Левая панель: Автосалон и Магазин -->
+        <div class="panel">
+            <h2>🚗 Авторынок</h2>
+            <button class="btn btn-buy" id="buy-car-btn" onclick="buyCar()">
+                <span>Купить авто</span>
+                <span id="car-cost">$300</span>
+            </button>
+            <div id="car-info-text" style="font-size: 0.85rem; color: #888; text-align: center;"></div>
+
+            <h2>🛒 Улучшения</h2>
+            <button class="btn" onclick="buyUpgrade('jack')"><span>🔩 Подъёмник</span><span id="cost-jack">$200</span></button>
+            <button class="btn" onclick="buyUpgrade('pneumo')"><span>⚡ Пневмоинструмент</span><span id="cost-pneumo">$500</span></button>
+
+            <h2>👷 Работники</h2>
+            <button class="btn" onclick="hireWorker('mechanic')"><span>👷 Механик</span><span id="cost-mechanic">$1000</span></button>
+            <button class="btn" onclick="hireWorker('welder')"><span>👨‍🏭 Сварщик</span><span id="cost-welder">$2000</span></button>
+        </div>
+
+        <!-- Центральная игровая зона (Canvas) -->
+        <div class="game-area">
+            <div class="status-overlay" id="status-text">Закажите машину на авторынке</div>
+            <canvas id="gameCanvas"></canvas>
+        </div>
+
+        <!-- Правая панель: Детали машины -->
+        <div class="parts-panel">
+            <h2>⚙️ Детали в наличии</h2>
+            <div id="parts-list">
+                <!-- Детали динамически генерируются здесь -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- СОСТОЯНИЕ ИГРЫ ---
+        let state = {
+            money: 500,
+            gems: 10,
+            currentCar: null,
+            gameState: 'IDLE', // IDLE, DELIVERING, GARAGE
+            towProgress: 0,
+            upgrades: { jack: 1, pneumo: 1 },
+            workers: { mechanic: false, welder: false }
+        };
+
+        // --- БАЗА ДАННЫХ МАШИН ---
+        const CAR_MODELS = [
+            { name: "Старый Хэтчбек", rarity: "common", rarityName: "Обычный", classColor: "rarity-common", basePrice: 300, multiplier: 1 },
+            { name: "Ржавый Седан", rarity: "common", rarityName: "Обычный", classColor: "rarity-common", basePrice: 450, multiplier: 1.2 },
+            { name: "Турбо Купе", rarity: "rare", rarityName: "Редкий", classColor: "rarity-rare", basePrice: 1000, multiplier: 2.2 },
+            { name: "Спортивный Седан", rarity: "rare", rarityName: "Редкий", classColor: "rarity-rare", basePrice: 1500, multiplier: 2.8 },
+            { name: "GT-RX", rarity: "epic", rarityName: "Эпический", classColor: "rarity-epic", basePrice: 3500, multiplier: 5 },
+            { name: "Falcon RS", rarity: "epic", rarityName: "Эпический", classColor: "rarity-epic", basePrice: 5000, multiplier: 6.5 },
+            { name: "Phantom X", rarity: "legendary", rarityName: "Легендарный", classColor: "rarity-legendary", basePrice: 12000, multiplier: 12 },
+            { name: "Titan R", rarity: "legendary", rarityName: "Легендарный", classColor: "rarity-legendary", basePrice: 20000, multiplier: 18 }
+        ];
+
+        const BASE_PARTS = [
+            { id: 'door', name: '🚪 Дверь', ratio: 0.15 },
+            { id: 'wheel', name: '🛞 Колесо', ratio: 0.10 },
+            { id: 'battery', name: '🔋 Аккумулятор', ratio: 0.12 },
+            { id: 'generator', name: '🪫 Генератор', ratio: 0.18 },
+            { id: 'engine', name: '🛠 Двигатель', ratio: 0.35 },
+            { id: 'body', name: '🚘 Кузов', ratio: 0.30 }
+        ];
+
+        // --- ИНИЦИАЛИЗА CANVAS ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // --- ЛОГИКА ИГРЫ ---
+        function updateUI() {
+            document.getElementById('money').innerText = Math.floor(state.money);
+            document.getElementById('gems').innerText = state.gems;
+
+            const buyBtn = document.getElementById('buy-car-btn');
+            buyBtn.disabled = state.gameState !== 'IDLE';
+
+            renderPartsList();
+        }
+
+        function buyCar() {
+            if (state.gameState !== 'IDLE') return;
+
+            // Выбираем случайную машину по шансам
+            const rand = Math.random();
+            let selectedPool = CAR_MODELS.filter(c => c.rarity === 'common');
+            if (rand > 0.6) selectedPool = CAR_MODELS.filter(c => c.rarity === 'rare');
+            if (rand > 0.85) selectedPool = CAR_MODELS.filter(c => c.rarity === 'epic');
+            if (rand > 0.97) selectedPool = CAR_MODELS.filter(c => c.rarity === 'legendary');
+
+            const modelTemplate = selectedPool[Math.floor(Math.random() * selectedPool.length)];
+
+            if (state.money < modelTemplate.basePrice) {
+                alert("Не хватает денег на покупку авто!");
+                return;
+            }
+
+            state.money -= modelTemplate.basePrice;
+            
+            // Генерируем объект машины
+            state.currentCar = {
+                ...modelTemplate,
+                parts: BASE_PARTS.map(p => ({
+                    ...p,
+                    price: Math.floor(modelTemplate.basePrice * p.ratio * modelTemplate.multiplier * (0.8 + Math.random()*0.4)),
+                    removed: false
+                }))
+            };
+
+            state.gameState = 'DELIVERING';
+            state.towProgress = 0;
+            document.getElementById('status-text').innerText = "Эвакуатор везёт " + state.currentCar.name + "...";
+            updateUI();
+        }
+
+        function removePart(partId) {
+            if (state.gameState !== 'GARAGE' || !state.currentCar) return;
+
+            const part = state.currentCar.parts.find(p => p.id === partId);
+            if (part && !part.removed) {
+                part.removed = true;
+                state.money += part.price;
+
+                // Проверяем, разобрана ли вся машина
+                const allRemoved = state.currentCar.parts.every(p => p.removed);
+                if (allRemoved) {
+                    state.gameState = 'IDLE';
+                    document.getElementById('status-text').innerText = "Машина полностью разобрана! Купите новую.";
+                    state.currentCar = null;
+                }
+                updateUI();
+            }
+        }
+
+        function renderPartsList() {
+            const container = document.getElementById('parts-list');
+            container.innerHTML = '';
+
+            if (!state.currentCar || state.gameState !== 'GARAGE') {
+                container.innerHTML = '<div style="color: #666; text-align: center; margin-top: 20px;">Нет машины в гараже</div>';
+                return;
+            }
+
+            state.currentCar.parts.forEach(part => {
+                const card = document.createElement('div');
+                card.className = `part-card ${part.removed ? 'removed' : ''}`;
+                card.innerHTML = `
+                    <div class="part-info">
+                        <span class="part-name">${part.name}</span>
+                        <span class="part-price">+$${part.price}</span>
+                    </div>
+                    ${!part.removed ? `<button class="part-btn" onclick="removePart('${part.id}')">Снять</button>` : '<span>Снято</span>'}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function buyUpgrade(type) {
+            const costs = { jack: 200 * state.upgrades.jack, pneumo: 500 * state.upgrades.pneumo };
+            if (state.money >= costs[type]) {
+                state.money -= costs[type];
+                state.upgrades[type]++;
+                document.getElementById(`cost-${type}`).innerText = `$${costs[type] * 2}`;
+                updateUI();
+            }
+        }
+
+        function hireWorker(type) {
+            const costs = { mechanic: 1000, welder: 2000 };
+            if (!state.workers[type] && state.money >= costs[type]) {
+                state.money -= costs[type];
+                state.workers[type] = true;
+                document.getElementById(`cost-${type}`).innerText = "Нанят";
+                updateUI();
+            }
+        }
+
+        // --- АВТОМАТИЗАЦИЯ (РАБОТНИКИ) ---
+        setInterval(() => {
+            if (state.gameState === 'GARAGE' && state.currentCar) {
+                // Механик снимает детали раз в 3 секунды
+                if (state.workers.mechanic) {
+                    const availableParts = state.currentCar.parts.filter(p => !p.removed && p.id !== 'body');
+                    if (availableParts.length > 0) {
+                        removePart(availableParts[0].id);
+                    }
+                }
+                // Сварщик пилит кузов
+                if (state.workers.welder) {
+                    const body = state.currentCar.parts.find(p => p.id === 'body');
+                    if (body && !body.removed) {
+                        removePart('body');
+                    }
+                }
+            }
+        }, 2500);
+
+        // --- ИГРОВОЙ ЦИКЛ ОТРИСОВКИ (CANVAS) ---
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            // Рисуем Гараж
+            ctx.fillStyle = "#2a2a38";
+            ctx.fillRect(centerX - 150, centerY - 100, 300, 200);
+            ctx.strokeStyle = "#444";
+            ctx.lineWidth = 4;
+            ctx.strokeRect(centerX - 150, centerY - 100, 300, 200);
+
+            // Анимация эвакуатора
+            if (state.gameState === 'DELIVERING') {
+                state.towProgress += 0.01 * state.upgrades.pneumo;
+                const startX = -100;
+                const targetX = centerX;
+                const currentX = startX + (targetX - startX) * state.towProgress;
+
+                // Рисуем эвакуатор
+                ctx.fillStyle = "#ffb300";
+                ctx.fillRect(currentX - 40, centerY - 20, 80, 40);
+                ctx.fillStyle = "#111";
+                ctx.fillRect(currentX - 20, centerY - 30, 30, 20); // кабина
+
+                if (state.towProgress >= 1) {
+                    state.gameState = 'GARAGE';
+                    document.getElementById('status-text').innerText = `Машина ${state.currentCar.name} в гараже. Разбирайте!`;
+                    updateUI();
+                }
+            }
+
+            // Рисуем машину в гараже
+            if (state.gameState === 'GARAGE' && state.currentCar) {
+                // Кастомный цвет машинки по редкости
+                let carColor = "#8bc34a";
+                if (state.currentCar.rarity === 'rare') carColor = "#2196f3";
+                if (state.currentCar.rarity === 'epic') carColor = "#9c27b0";
+                if (state.currentCar.rarity === 'legendary') carColor = "#ff9800";
+
+                // Отображаем оставшиеся детали как кубики
+                ctx.fillStyle = carColor;
+                ctx.fillRect(centerX - 60, centerY - 35, 120, 70); // Кузов
+
+                ctx.fillStyle = "#fff";
+                ctx.font = "14px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText(state.currentCar.name, centerX, centerY - 45);
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Запуск
+        updateUI();
+        gameLoop();
+    </script>
+</body>
+</html>
