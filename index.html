@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Scrap Empire ULTIMATE 10.3</title>
+    <title>Scrap Empire ULTIMATE 10.4</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -419,6 +419,13 @@
             }
             loadProgress();
             
+            // Если при загрузке машины нет — сразу создаем первую
+            if(!game.activeCar) {
+                orderCar();
+            } else {
+                restoreCarUI();
+            }
+            
             setInterval(autoWorkersTick, 1000);
             setInterval(coolTick, 100);
             setInterval(updateMarket, 30000);
@@ -493,7 +500,10 @@
         }
 
         function orderCar() {
-            if(game.activeCar) return;
+            if(game.activeCar) {
+                showToast("⚠️ Машина уже в гараже!");
+                return;
+            }
 
             var pool = CARS.filter(function(c){ return c.minLvl <= game.playerLvl; });
             var tmpl = pool[Math.floor(Math.random() * pool.length)];
@@ -512,13 +522,24 @@
                 ]
             };
 
+            restoreCarUI();
+            showToast("🚗 Новая машина доставлена!");
+            updateUI();
+        }
+
+        function restoreCarUI() {
+            if(!game.activeCar) return;
+            var tmpl = CARS.find(function(c) { return c.id === game.activeCar.id; }) || CARS[0];
+            var r = game.activeCar.rarityInfo;
+
             var badge = document.getElementById('car-rarity-badge');
-            badge.innerText = r.name; badge.style.background = r.color; badge.style.display = 'block';
+            badge.innerText = r.name; 
+            badge.style.background = r.color; 
+            badge.style.display = 'block';
+            
             document.getElementById('car-title-text').innerText = tmpl.name;
             document.getElementById('car-box').innerHTML = `<img src="${tmpl.img}" alt="${tmpl.name}">`;
             document.getElementById('car-box').classList.remove('empty');
-
-            updateUI();
         }
 
         function tapPart(e, id) {
@@ -700,7 +721,9 @@
             game.rebirthCount++;
             game.playerLvl = 1; game.xp = 0; game.money = 500; game.activeCar = null;
             closeModal('rebirth-modal');
-            updateUI(); showToast("🏛️ Перерождение выполнено!");
+            orderCar();
+            updateUI(); 
+            showToast("🏛️ Перерождение выполнено!");
         }
 
         function updateUI() {
@@ -747,12 +770,12 @@
         }
 
         function saveProgress() {
-            try { localStorage.setItem('scrap_empire_save_v3', JSON.stringify(game)); } catch(e) {}
+            try { localStorage.setItem('scrap_empire_save_v4', JSON.stringify(game)); } catch(e) {}
         }
 
         function loadProgress() {
             try {
-                var data = localStorage.getItem('scrap_empire_save_v3');
+                var data = localStorage.getItem('scrap_empire_save_v4');
                 if(data) {
                     var parsed = JSON.parse(data);
                     for(var key in parsed) game[key] = parsed[key];
