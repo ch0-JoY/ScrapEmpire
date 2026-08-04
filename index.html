@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Scrap Empire MONOLITH 10.0</title>
+    <title>Scrap Empire ULTIMATE 10.1</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -64,7 +64,6 @@
             overflow: hidden; background: radial-gradient(ellipse at center, rgba(15, 25, 45, 0.9) 0%, rgba(2, 4, 8, 0.98) 100%);
         }
 
-        /* ИНДИКАТОР ПЕРЕГРЕВА И РЖАВЧИНЫ */
         .status-bars { position: absolute; top: 8px; left: 10px; display: flex; flex-direction: column; gap: 4px; z-index: 10; }
         .bar-wrap { width: 90px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
         .bar-fill-heat { width: 0%; height: 100%; background: var(--neon-green); transition: width 0.1s; }
@@ -77,13 +76,12 @@
         .car-title { position: absolute; top: 28px; font-size: 0.85rem; font-weight: 900; color: #fff; text-align: center; }
 
         .car-wrapper {
-            width: 270px; height: 120px; position: relative;
+            width: 280px; height: 130px; position: relative;
             transition: transform 0.05s ease; display: flex; align-items: center; justify-content: center;
         }
         .car-wrapper.hit { transform: scale(0.95) translateY(3px); }
-        .car-wrapper.empty { opacity: 0.15; filter: grayscale(1); }
+        .car-wrapper.empty { opacity: 0.2; filter: grayscale(1); }
 
-        /* ЭФФЕКТЫ И МИНИ-ИГРЫ */
         .fx-text {
             position: absolute; font-weight: 900; font-size: 1.1rem; pointer-events: none;
             animation: flyUp 0.5s ease-out forwards; z-index: 50; text-shadow: 0 2px 8px rgba(0,0,0,0.9);
@@ -92,14 +90,6 @@
             0% { opacity: 1; transform: translateY(0) scale(0.8); }
             100% { opacity: 0; transform: translateY(-35px) scale(1.2); }
         }
-
-        .qte-overlay {
-            position: absolute; inset: 0; background: rgba(0,0,0,0.85);
-            display: none; flex-direction: column; align-items: center; justify-content: center; gap: 10px; z-index: 80;
-        }
-        .qte-bar { width: 80%; height: 20px; background: #111; border-radius: 10px; position: relative; overflow: hidden; border: 2px solid #fff; }
-        .qte-target { position: absolute; top: 0; bottom: 0; left: 55%; width: 25%; background: var(--neon-green); }
-        .qte-pointer { position: absolute; top: 0; bottom: 0; left: 0%; width: 5px; background: var(--neon-red); }
 
         /* СЕТКА ДЕТАЛЕЙ */
         .parts-grid {
@@ -179,7 +169,7 @@
         </div>
 
         <div class="header-bar">
-            <div class="btn-icon" onclick="toggleAudio()">📻</div>
+            <div class="btn-icon" onclick="openModal('settings-modal')">⚙️</div>
             <div class="res-pill" style="color: var(--neon-gold)">🪙 <span id="m-val">500</span></div>
             <div class="res-pill" style="color: var(--neon-cyan)">💎 <span id="g-val">10</span></div>
             <div class="btn-icon" onclick="openModal('market-modal')">📈</div>
@@ -196,14 +186,6 @@
         <div class="car-title" id="car-title-text">НАЖМИ "ЗАКАЗ" ВНИЗУ</div>
 
         <div class="car-wrapper empty" id="car-box"></div>
-
-        <div class="qte-overlay" id="qte-box">
-            <div style="font-weight:900; color:var(--neon-gold); font-size:0.8rem;">СОРВАНО!! ЖМИ В ЗЕЛЕНУЮ ЗОНУ!</div>
-            <div class="qte-bar" onclick="hitQTE()">
-                <div class="qte-target" id="qte-target"></div>
-                <div class="qte-pointer" id="qte-pointer"></div>
-            </div>
-        </div>
     </div>
 
     <div class="parts-grid" id="parts-box"></div>
@@ -235,6 +217,26 @@
         </div>
     </div>
 
+    <!-- МОДАЛКА: НАСТРОЙКИ -->
+    <div class="modal-bg" id="settings-modal">
+        <div class="modal-box">
+            <div class="modal-head">⚙️ НАСТРОЙКИ</div>
+            <div class="list-row">
+                <div>Радио (Фоновый эмбиент)</div>
+                <button class="btn-act" id="radio-btn" onclick="toggleRadio()">ВКЛ</button>
+            </div>
+            <div class="list-row">
+                <div>Вибрация на клик</div>
+                <button class="btn-act" id="vib-btn" onclick="toggleVibrate()">ВКЛ</button>
+            </div>
+            <div class="list-row">
+                <div>Звуковые эффекты</div>
+                <button class="btn-act" id="sfx-btn" onclick="toggleAudio()">ВКЛ</button>
+            </div>
+            <div class="btn-close" onclick="closeModal('settings-modal')">ЗАКРЫТЬ</div>
+        </div>
+    </div>
+
     <!-- МОДАЛКА: ЧЕРНЫЙ РЫНОК -->
     <div class="modal-bg" id="market-modal">
         <div class="modal-box">
@@ -256,18 +258,18 @@
     <div class="modal-bg" id="workers-modal">
         <div class="modal-box">
             <div class="modal-head">🤖 НАЕМНЫЕ РАБОЧИЕ</div>
-            <div class="modal-body">Пассивный урон и сбор лома:</div>
+            <div class="modal-body">Пассивный сбор и демонтаж:</div>
             <div class="list-row">
                 <div><b>Ученик</b> (+2 Урон/с)</div>
-                <button class="btn-act" onclick="buyWorker(1)">🪙 <span id="w1-cost">200</span></button>
+                <button class="btn-act" onclick="buyWorker(1)">🪙 200</button>
             </div>
             <div class="list-row">
                 <div><b>Мастер</b> (+12 Урон/с)</div>
-                <button class="btn-act" onclick="buyWorker(2)">🪙 <span id="w2-cost">1200</span></button>
+                <button class="btn-act" onclick="buyWorker(2)">🪙 1200</button>
             </div>
             <div class="list-row">
                 <div><b>Дроид</b> (+60 Урон/с)</div>
-                <button class="btn-act" onclick="buyWorker(3)">💎 <span id="w3-cost">50</span></button>
+                <button class="btn-act" onclick="buyWorker(3)">💎 50</button>
             </div>
             <div class="btn-close" onclick="closeModal('workers-modal')">ЗАКРЫТЬ</div>
         </div>
@@ -276,7 +278,7 @@
     <!-- МОДАЛКА: КВЕСТЫ -->
     <div class="modal-bg" id="quests-modal">
         <div class="modal-box">
-            <div class="modal-head">📜 ЕЖЕДНЕВНЫЕ КОНТРАКТЫ</div>
+            <div class="modal-head">📜 КОНТРАКТЫ</div>
             <div id="quests-list-container" style="display:flex; flex-direction:column; gap:6px;"></div>
             <div class="btn-close" onclick="closeModal('quests-modal')">ЗАКРЫТЬ</div>
         </div>
@@ -285,18 +287,17 @@
     <!-- МОДАЛКА: СКИНЫ И ИНСТРУМЕНТЫ -->
     <div class="modal-bg" id="skins-modal">
         <div class="modal-box">
-            <div class="modal-head">🛠️ КАСТОМИЗАЦИЯ</div>
-            <div class="modal-body">Выбери инструмент для демонтажа:</div>
+            <div class="modal-head">🛠️ ИНСТРУМЕНТЫ</div>
             <div class="list-row">
-                <div><b>Ржавый Ключ</b><br><small>Базовый инструмент</small></div>
-                <button class="btn-act" onclick="selectSkin(1)">ЭКИПИРОВАТЬ</button>
+                <div><b>Ржавый Ключ</b></div>
+                <button class="btn-act" onclick="selectSkin(1)">ВЫБРАТЬ</button>
             </div>
             <div class="list-row">
-                <div><b>Пневмогайковерт</b><br><small>Урон x1.5, Нагрев +20%</small></div>
+                <div><b>Пневмоключ</b><br><small>Урон x1.5</small></div>
                 <button class="btn-act" onclick="buySkin(2)">🪙 2500</button>
             </div>
             <div class="list-row">
-                <div><b>Плазменный Резак</b><br><small>Урон x3.0, Игнорирует ржавчину</small></div>
+                <div><b>Плазморез</b><br><small>Урон x3.0</small></div>
                 <button class="btn-act" onclick="buySkin(3)">💎 100</button>
             </div>
             <div class="btn-close" onclick="closeModal('skins-modal')">ЗАКРЫТЬ</div>
@@ -312,7 +313,7 @@
                 Охлаждение: <b style="color:var(--neon-cyan);" id="cool-speed-val">1x</b>
             </div>
             <button class="btn-act" onclick="upTalent('crit')">КРИТ +5% (💎 10)</button>
-            <button class="btn-act" onclick="upTalent('cool')">ОХЛАЖДЕНИЕ +20% (💎 15)</button>
+            <button class="btn-act" onclick="upTalent('cool')">ОХЛАЖДЕНИЕ (💎 15)</button>
             <div class="btn-close" onclick="closeModal('talents-modal')">ЗАКРЫТЬ</div>
         </div>
     </div>
@@ -321,14 +322,43 @@
     <div class="modal-bg" id="rebirth-modal">
         <div class="modal-box">
             <div class="modal-head">🏛️ ПЕРЕРОЖДЕНИЕ</div>
-            <div class="modal-body">Сброс ресурсов в обмен на вечный множитель +15% к доходу.</div>
-            <button class="btn-act" onclick="doRebirth()">СДЕЛАТЬ ПРЕСТИЖ (УР. 10)</button>
+            <div class="modal-body">Сброс прогресса на Ур. 10 ради вечного бонуса +15% к доходу.</div>
+            <button class="btn-act" onclick="doRebirth()">СДЕЛАТЬ ПРЕСТИЖ</button>
             <div class="btn-close" onclick="closeModal('rebirth-modal')">ЗАКРЫТЬ</div>
         </div>
     </div>
 
     <script>
-        // WEB AUDIO API SOUND ENGINE
+        var game = {
+            money: 500, gems: 10, metalResource: 0, elecResource: 0,
+            playerLvl: 1, xp: 0, xpMax: 100, toolSkin: 1,
+            heat: 0, isOverheated: false, coolSpeed: 1.0, critChance: 0.05,
+            rebirthCount: 0, workers: { w1: 0, w2: 0, w3: 0 },
+            market: { metalMult: 1.0, elecMult: 1.0 },
+            quests: [
+                { id: 1, text: "Разбери 3 машины", target: 3, current: 0, rewardGems: 15, done: false },
+                { id: 2, text: "Нанеси 20 критов", target: 20, current: 0, rewardMoney: 1000, done: false }
+            ],
+            activeCar: null,
+            audioActive: true,
+            vibrateActive: true,
+            radioActive: false
+        };
+
+        var RARITY = {
+            COMMON: { name: "Обычная", color: "#b0bec5", mult: 1.0 },
+            RARE: { name: "Редкая", color: "#00e5ff", mult: 1.8 },
+            EPIC: { name: "Эпик", color: "#ab47bc", mult: 3.2 },
+            LEGENDARY: { name: "Легенда", color: "#ffd700", mult: 7.0 }
+        };
+
+        var CARS = [
+            { id: 1, name: "Rusty Sedan", minLvl: 1, rarity: "COMMON", hp: 30, reward: 90, rust: 20 },
+            { id: 2, name: "Vortex Sport", minLvl: 2, rarity: "RARE", hp: 60, reward: 250, rust: 40 },
+            { id: 3, name: "Cyber Truck X", minLvl: 4, rarity: "EPIC", hp: 130, reward: 850, rust: 70 },
+            { id: 4, name: "Phantom Hypercar", minLvl: 7, rarity: "LEGENDARY", hp: 300, reward: 3000, rust: 100 }
+        ];
+
         var audioCtx = null;
         function initAudio() {
             if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -342,68 +372,25 @@
             osc.connect(gain); gain.connect(audioCtx.destination);
 
             if(type === 'hit') {
-                osc.type = 'triangle'; osc.frequency.setValueAtTime(120, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.08);
-            } else if(type === 'crit') {
-                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(440, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15);
-                gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.15);
-            } else if(type === 'coins') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-                osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.05);
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(140, audioCtx.currentTime);
                 gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.06);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.06);
+            } else if(type === 'crit') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(950, audioCtx.currentTime + 0.12);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
                 osc.start(); osc.stop(audioCtx.currentTime + 0.12);
+            } else if(type === 'coins') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(1320, audioCtx.currentTime + 0.05);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
             }
         }
-    </script>
-        <script>
-        /* ГЛОБАЛЬНОЕ СОСТОЯНИЕ ИГРЫ */
-        var game = {
-            money: 500,
-            gems: 10,
-            metalResource: 0,
-            elecResource: 0,
-            playerLvl: 1,
-            xp: 0,
-            xpMax: 100,
-            toolSkin: 1,
-            heat: 0,
-            isOverheated: false,
-            coolSpeed: 1.0,
-            critChance: 0.05,
-            rebirthCount: 0,
-            workers: { w1: 0, w2: 0, w3: 0 },
-            market: { metalMult: 1.0, elecMult: 1.0 },
-            quests: [
-                { id: 1, text: "Разбери 3 машины", target: 3, current: 0, rewardGems: 15, done: false },
-                { id: 2, text: "Нанеси 20 критов", target: 20, current: 0, rewardMoney: 1000, done: false }
-            ],
-            activeCar: null,
-            audioActive: true
-        };
 
-        var RARITY = {
-            COMMON: { name: "Обычная", color: "#b0bec5", mult: 1.0 },
-            RARE: { name: "Редкая", color: "#00e5ff", mult: 1.8 },
-            EPIC: { name: "Эпик", color: "#ab47bc", mult: 3.2 },
-            LEGENDARY: { name: "Легенда", color: "#ffd700", mult: 7.0 }
-        };
-
-        var CARS = [
-            { id: 1, name: "Rusty Beetle", minLvl: 1, rarity: "COMMON", hp: 20, reward: 90, rust: 30 },
-            { id: 2, name: "Vortex Sedan", minLvl: 2, rarity: "RARE", hp: 45, reward: 250, rust: 50 },
-            { id: 3, name: "Cyber Truck", minLvl: 4, rarity: "EPIC", hp: 110, reward: 850, rust: 80 },
-            { id: 4, name: "Phantom Hyper", minLvl: 7, rarity: "LEGENDARY", hp: 260, reward: 3000, rust: 120 }
-        ];
-
-        var qteInterval = null, qtePos = 0, qteDir = 1;
-
-        // ИНИЦИАЛИЗАЦИЯ И ИГРОВОЙ ЦИКЛ
         window.addEventListener('load', function() {
             if(window.Telegram?.WebApp) {
                 Telegram.WebApp.ready(); 
@@ -411,11 +398,10 @@
             }
             loadProgress();
             
-            // Таймеры систем
             setInterval(autoWorkersTick, 1000);
             setInterval(coolTick, 100);
-            setInterval(updateMarket, 30000); // Рынок обновляется раз в 30 сек
-            setInterval(saveProgress, 10000); // Автосохранение раз в 10 сек
+            setInterval(updateMarket, 30000);
+            setInterval(saveProgress, 10000);
             
             updateMarket();
             renderQuests();
@@ -432,9 +418,28 @@
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         function triggerHaptic() {
+            if(!game.vibrateActive) return;
             if(window.Telegram?.WebApp?.HapticFeedback) {
                 Telegram.WebApp.HapticFeedback.impactOccurred('light');
             }
+        }
+
+        function toggleVibrate() {
+            game.vibrateActive = !game.vibrateActive;
+            document.getElementById('vib-btn').innerText = game.vibrateActive ? "ВКЛ" : "ВЫКЛ";
+            showToast(game.vibrateActive ? "Вибрация включена" : "Вибрация выключена");
+        }
+
+        function toggleAudio() {
+            game.audioActive = !game.audioActive;
+            document.getElementById('sfx-btn').innerText = game.audioActive ? "ВКЛ" : "ВЫКЛ";
+            showToast(game.audioActive ? "Звуки включены" : "Звуки выключены");
+        }
+
+        function toggleRadio() {
+            game.radioActive = !game.radioActive;
+            document.getElementById('radio-btn').innerText = game.radioActive ? "ВКЛ" : "ВЫКЛ";
+            showToast(game.radioActive ? "📻 Радио играет" : "📻 Радио выключено");
         }
 
         function addXP(v) {
@@ -449,7 +454,45 @@
             updateUI();
         }
 
-        // РАБОТА С МАШИНАМИ
+        // РЕАЛИСТИЧНЫЕ SVG МОДЕЛИ МАШИН
+        function getRealisticCarSVG(id, color) {
+            if(id === 1) { // Rusty Sedan
+                return `<svg viewBox="0 0 300 130" style="width:100%; height:100%;">
+                    <ellipse cx="150" cy="115" rx="120" ry="6" fill="#000" opacity="0.5"/>
+                    <path d="M40 85 L70 50 L120 42 L200 45 L245 65 L275 85 Z" fill="${color}" stroke="#333" stroke-width="2"/>
+                    <path d="M75 52 L115 45 L155 45 L155 80 L65 80 Z" fill="#223" opacity="0.6"/>
+                    <path d="M165 45 L215 48 L235 80 L165 80 Z" fill="#223" opacity="0.6"/>
+                    <circle cx="85" cy="92" r="18" fill="#111" stroke="#444" stroke-width="5"/>
+                    <circle cx="215" cy="92" r="18" fill="#111" stroke="#444" stroke-width="5"/>
+                    <path d="M35 80 Q55 75 75 85" stroke="#d84315" stroke-width="3" fill="none"/>
+                </svg>`;
+            } else if(id === 2) { // Vortex Sport
+                return `<svg viewBox="0 0 300 130" style="width:100%; height:100%;">
+                    <ellipse cx="150" cy="115" rx="125" ry="6" fill="#000" opacity="0.6"/>
+                    <path d="M30 90 L60 45 L130 35 L220 50 L280 85 Z" fill="${color}" stroke="#00e5ff" stroke-width="1.5"/>
+                    <path d="M85 47 L130 38 L180 38 L200 80 L75 80 Z" fill="#00ffff" opacity="0.3"/>
+                    <circle cx="80" cy="90" r="17" fill="#0f172a" stroke="#00e5ff" stroke-width="4"/>
+                    <circle cx="220" cy="90" r="17" fill="#0f172a" stroke="#00e5ff" stroke-width="4"/>
+                </svg>`;
+            } else if(id === 3) { // Cyber Truck X
+                return `<svg viewBox="0 0 300 130" style="width:100%; height:100%;">
+                    <ellipse cx="150" cy="115" rx="130" ry="7" fill="#000" opacity="0.7"/>
+                    <polygon points="20,90 80,30 220,30 280,85 280,95 20,95" fill="${color}" stroke="#ab47bc" stroke-width="2"/>
+                    <polygon points="85,35 210,35 230,80 75,80" fill="#111" opacity="0.8"/>
+                    <circle cx="85" cy="92" r="19" fill="#111" stroke="#ab47bc" stroke-width="5"/>
+                    <circle cx="215" cy="92" r="19" fill="#111" stroke="#ab47bc" stroke-width="5"/>
+                </svg>`;
+            } else { // Phantom Hypercar
+                return `<svg viewBox="0 0 300 130" style="width:100%; height:100%;">
+                    <ellipse cx="150" cy="115" rx="135" ry="8" fill="#000" opacity="0.8"/>
+                    <path d="M20 95 C 60 50, 140 25, 260 70 L 290 95 Z" fill="${color}" stroke="#ffd700" stroke-width="2"/>
+                    <path d="M90 48 Q 140 32, 190 48 L 180 85 L 85 85 Z" fill="#ffd700" opacity="0.25"/>
+                    <circle cx="80" cy="94" r="18" fill="#000" stroke="#ffd700" stroke-width="5"/>
+                    <circle cx="220" cy="94" r="18" fill="#000" stroke="#ffd700" stroke-width="5"/>
+                </svg>`;
+            }
+        }
+
         function orderCar() {
             if(game.activeCar) return;
 
@@ -464,45 +507,30 @@
                 rustHp: tmpl.rust,
                 maxRustHp: tmpl.rust,
                 parts: [
-                    { id: 1, name: "🛞 Ходовая часть", hp: tmpl.hp, maxHp: tmpl.hp, reward: tmpl.reward },
-                    { id: 2, name: "🚪 Обшивка и стекла", hp: Math.floor(tmpl.hp * 1.4), maxHp: Math.floor(tmpl.hp * 1.4), reward: Math.floor(tmpl.reward * 1.4) },
-                    { id: 3, name: "⚙️ Силовой агрегат", hp: tmpl.hp * 2, maxHp: tmpl.hp * 2, reward: tmpl.reward * 2.5 }
+                    { id: 1, name: "🛞 Подвеска", hp: tmpl.hp, maxHp: tmpl.hp, reward: tmpl.reward },
+                    { id: 2, name: "🚪 Кузов", hp: Math.floor(tmpl.hp * 1.3), maxHp: Math.floor(tmpl.hp * 1.3), reward: Math.floor(tmpl.reward * 1.3) },
+                    { id: 3, name: "⚙️ Двигатель", hp: tmpl.hp * 2, maxHp: tmpl.hp * 2, reward: tmpl.reward * 2.5 }
                 ]
             };
 
             var badge = document.getElementById('car-rarity-badge');
             badge.innerText = r.name; badge.style.background = r.color; badge.style.display = 'block';
             document.getElementById('car-title-text').innerText = tmpl.name;
-            document.getElementById('car-box').innerHTML = generateCarSVG(r.color);
+            document.getElementById('car-box').innerHTML = getRealisticCarSVG(tmpl.id, r.color);
             document.getElementById('car-box').classList.remove('empty');
 
             updateUI();
         }
 
-        function generateCarSVG(color) {
-            return `<svg viewBox="0 0 300 120" style="width:100%; height:100%;">
-                <ellipse cx="150" cy="105" rx="125" ry="6" fill="#000" opacity="0.6"/>
-                <path d="M15 75 L45 35 L120 25 L210 35 L270 58 L285 75 Z" fill="${color}" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
-                <circle cx="65" cy="80" r="16" fill="#111" stroke="#555" stroke-width="4"/>
-                <circle cx="225" cy="80" r="16" fill="#111" stroke="#555" stroke-width="4"/>
-            </svg>`;
-        }
-
-        // БОЕВАЯ СИСТЕМА И КЛИК
         function tapPart(e, id) {
             if(!game.activeCar || game.isOverheated) return;
 
-            // Нагрев инструмента в зависимости от скина
-            var heatInc = (game.toolSkin === 2) ? 10 : 7;
+            // Сделали перегрев медленнее (больше кликов)
+            var heatInc = (game.toolSkin === 2) ? 2.5 : 2.0;
             game.heat += heatInc;
             if(game.heat >= 100) {
                 game.heat = 100; game.isOverheated = true;
                 showToast("🔥 ИНСТРУМЕНТ ПЕРЕГРЕЛСЯ!");
-            }
-
-            // Шанс QTE
-            if(Math.random() < 0.07 && !game.isOverheated) {
-                startQTE(id); return;
             }
 
             var skinMult = (game.toolSkin === 2) ? 1.5 : (game.toolSkin === 3) ? 3.0 : 1.0;
@@ -513,10 +541,9 @@
             var p = game.activeCar.parts.find(function(x){ return x.id === id; });
             if(!p || p.hp <= 0) return;
 
-            // Расчет ржавчины
             if(game.activeCar.rustHp > 0 && game.toolSkin !== 3) {
                 game.activeCar.rustHp = Math.max(0, game.activeCar.rustHp - baseDmg);
-                spawnFx(e, "🛡️ СЧИЩЕНО", "#d84315");
+                spawnFx(e, "🛡️ РЖАВЧИНА", "#d84315");
                 playSound('hit');
                 updateUI();
                 return;
@@ -542,7 +569,6 @@
             spawnFx(e, (isCrit ? "⚡ " : "-") + finalDmg, isCrit ? "#ffd700" : "#00e5ff");
             addXP(2);
 
-            // Часть разбитой детали уходит на ресурсы
             game.metalResource += Math.floor(Math.random() * 3) + 1;
             if(Math.random() > 0.6) game.elecResource += 1;
 
@@ -555,9 +581,8 @@
                 addXP(15);
             }
 
-            // Авто зачищено
             if(game.activeCar.parts.every(function(x){ return x.hp <= 0; })) {
-                showToast("🎉 АВТОМОБИЛЬ ПОЛНОСТЬЮ РАЗОБРАН!");
+                showToast("🎉 МАШИНА УСПЕШНО РАЗОБРАНА!");
                 trackQuest(1, 1);
                 game.activeCar = null;
                 document.getElementById('car-box').classList.add('empty');
@@ -567,36 +592,9 @@
             updateUI();
         }
 
-        // QTE МЕХАНИКА
-        function startQTE(partId) {
-            var box = document.getElementById('qte-box');
-            box.style.display = 'flex'; box.dataset.partId = partId;
-            qtePos = 0; qteDir = 4;
-            qteInterval = setInterval(function(){
-                qtePos += qteDir;
-                if(qtePos >= 95 || qtePos <= 0) qteDir *= -1;
-                document.getElementById('qte-pointer').style.left = qtePos + "%";
-            }, 18);
-        }
-
-        function hitQTE() {
-            clearInterval(qteInterval);
-            document.getElementById('qte-box').style.display = 'none';
-            var partId = parseInt(document.getElementById('qte-box').dataset.partId);
-
-            if(qtePos >= 55 && qtePos <= 80) {
-                showToast("🎯 ИДЕАЛЬНЫЙ УДАР! x5!");
-                applyDamage(null, partId, game.playerLvl * 5);
-            } else {
-                showToast("❌ СОРВАЛОСЬ!");
-            }
-        }
-
-        // ЧЕРНЫЙ РЫНОК И ОХЛАЖДЕНИЕ
         function updateMarket() {
             game.market.metalMult = parseFloat((Math.random() * 1.5 + 0.5).toFixed(2));
             game.market.elecMult = parseFloat((Math.random() * 2.5 + 0.8).toFixed(2));
-            
             document.getElementById('mkt-metal-mult').innerText = "x" + game.market.metalMult;
             document.getElementById('mkt-elec-mult').innerText = "x" + game.market.elecMult;
         }
@@ -605,7 +603,7 @@
             if(type === 'metal' && game.metalResource > 0) {
                 var sum = Math.floor(game.metalResource * 10 * game.market.metalMult);
                 game.money += sum;
-                showToast("Продано металлолома на 🪙 " + sum);
+                showToast("Продано металла на 🪙 " + sum);
                 game.metalResource = 0;
             } else if(type === 'elec' && game.elecResource > 0) {
                 var sum = Math.floor(game.elecResource * 40 * game.market.elecMult);
@@ -613,7 +611,7 @@
                 showToast("Продано электроники на 🪙 " + sum);
                 game.elecResource = 0;
             } else {
-                showToast("⚠️ Нет ресурсов для продажи!");
+                showToast("⚠️ Нет ресурсов!");
             }
             updateUI();
         }
@@ -622,15 +620,19 @@
             if(!game.activeCar) return;
             var totalDmg = (game.workers.w1 * 2) + (game.workers.w2 * 12) + (game.workers.w3 * 60);
             if(totalDmg <= 0) return;
-
             var targetPart = game.activeCar.parts.find(function(p){ return p.hp > 0; });
             if(targetPart) applyDamage(null, targetPart.id, totalDmg);
         }
 
         function coolTick() {
             if(game.heat > 0) {
-                game.heat -= (2.5 * game.coolSpeed);
-                if(game.heat <= 0) { game.heat = 0; game.isOverheated = false; }
+                game.heat -= (3.0 * game.coolSpeed);
+                // Охлаждение теперь позволяет работать, когда остыло ниже 40%, а не ждет 0%
+                if(game.isOverheated && game.heat <= 40) {
+                    game.isOverheated = false;
+                    showToast("⚡ Инструмент готов!");
+                }
+                if(game.heat <= 0) { game.heat = 0; }
             }
             var hBar = document.getElementById('heat-bar');
             hBar.style.width = game.heat + "%";
@@ -644,7 +646,6 @@
             }
         }
 
-        // МЕХАНИКА КВЕСТОВ
         function trackQuest(id, count) {
             var q = game.quests.find(function(x){ return x.id === id; });
             if(q && !q.done) {
@@ -654,7 +655,7 @@
                     q.done = true;
                     if(q.rewardGems) game.gems += q.rewardGems;
                     if(q.rewardMoney) game.money += q.rewardMoney;
-                    showToast("🎉 КВЕСТ ВЫПОЛНЕН: " + q.text);
+                    showToast("🎉 КВЕСТ ВЫПОЛНЕН!");
                 }
                 renderQuests();
             }
@@ -668,12 +669,11 @@
                 div.className = 'list-row';
                 var rText = q.rewardGems ? "💎 " + q.rewardGems : "🪙 " + q.rewardMoney;
                 div.innerHTML = `<div><b>${q.text}</b><br><small>Прогресс: ${q.current}/${q.target}</small></div>
-                <div style="font-weight:900; color:${q.done ? 'var(--neon-green)' : 'var(--neon-gold)'}">${q.done ? 'ВЫПОЛНЕНО' : rText}</div>`;
+                <div style="font-weight:900; color:${q.done ? 'var(--neon-green)' : 'var(--neon-gold)'}">${q.done ? 'ГОТОВО' : rText}</div>`;
                 c.appendChild(div);
             });
         }
 
-        // АПГРЕЙДЫ И СКИНЫ
         function buyWorker(type) {
             if(type === 1 && game.money >= 200) { game.money -= 200; game.workers.w1++; }
             else if(type === 2 && game.money >= 1200) { game.money -= 1200; game.workers.w2++; }
@@ -686,16 +686,16 @@
             if(id === 2 && game.money >= 2500) { game.money -= 2500; game.toolSkin = 2; }
             else if(id === 3 && game.gems >= 100) { game.gems -= 100; game.toolSkin = 3; }
             else { showToast("⚠️ Не хватает ресурсов!"); return; }
-            showToast("🛠️ Скин экипирован!"); updateUI();
+            showToast("🛠️ Инструмент сменен!"); updateUI();
         }
 
-        function selectSkin(id) { game.toolSkin = id; showToast("🛠️ Экипирован стандартный ключ"); }
+        function selectSkin(id) { game.toolSkin = id; showToast("🛠️ Экипирован ключ"); }
 
         function upTalent(type) {
             if(type === 'crit' && game.gems >= 10) { game.gems -= 10; game.critChance += 0.05; }
             else if(type === 'cool' && game.gems >= 15) { game.gems -= 15; game.coolSpeed += 0.2; }
             else { showToast("⚠️ Не хватает 💎"); return; }
-            updateUI(); showToast("⚡ Талант усилен!");
+            updateUI(); showToast("⚡ Талант прокачан!");
         }
 
         function doRebirth() {
@@ -703,15 +703,9 @@
             game.rebirthCount++;
             game.playerLvl = 1; game.xp = 0; game.money = 500; game.activeCar = null;
             closeModal('rebirth-modal');
-            updateUI(); showToast("🏛️ Перерождение выполнено! ВЕЧНЫЙ БОНУС ПОЛУЧЕН!");
+            updateUI(); showToast("🏛️ Перерождение выполнено!");
         }
 
-        function toggleAudio() {
-            game.audioActive = !game.audioActive;
-            showToast(game.audioActive ? "📻 Звук ВКЛ" : "📻 Звук ВЫКЛ");
-        }
-
-        // ОТОБРАЖЕНИЕ И СТАТУСЫ
         function updateUI() {
             document.getElementById('m-val').innerText = game.money.toLocaleString();
             document.getElementById('g-val').innerText = game.gems;
@@ -755,16 +749,13 @@
             setTimeout(function() { if(ft && ft.parentNode) ft.parentNode.removeChild(ft); }, 500);
         }
 
-        // СИСТЕМА СОХРАНЕНИЙ LOCALSTORAGE
         function saveProgress() {
-            try {
-                localStorage.setItem('scrap_empire_save', JSON.stringify(game));
-            } catch(e) {}
+            try { localStorage.setItem('scrap_empire_save_v2', JSON.stringify(game)); } catch(e) {}
         }
 
         function loadProgress() {
             try {
-                var data = localStorage.getItem('scrap_empire_save');
+                var data = localStorage.getItem('scrap_empire_save_v2');
                 if(data) {
                     var parsed = JSON.parse(data);
                     for(var key in parsed) game[key] = parsed[key];
@@ -774,4 +765,3 @@
     </script>
 </body>
 </html>
-
