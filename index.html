@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Scrap Empire ULTIMATE 10.2</title>
+    <title>Scrap Empire ULTIMATE 10.3</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -31,7 +31,6 @@
             justify-content: space-between; padding: calc(6px + env(safe-area-inset-top)) 8px calc(6px + env(safe-area-inset-bottom));
         }
 
-        /* ШАПКА И СТАТЫ */
         .top-container { display: flex; flex-direction: column; gap: 4px; width: 100%; }
         
         .level-bar-box {
@@ -57,13 +56,13 @@
         }
         .btn-icon:active { transform: scale(0.92); }
 
-        /* ИГРОВАЯ АРЕНА С ФОНОВЫМ ИЗОБРАЖЕНИЕМ ЦЕХА */
+        /* ИГРОВАЯ АРЕНА С ФОТОГРАФИЕЙ РЕАЛЬНОГО ГАРАЖА */
         .garage-area {
             flex: 1; margin: 6px 0; border-radius: 16px; border: 1px solid var(--panel-border);
             position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
             overflow: hidden; 
-            background: linear-gradient(rgba(3, 5, 9, 0.82), rgba(3, 5, 9, 0.92)), 
-                        url('https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80') center/cover no-repeat;
+            background: linear-gradient(rgba(3, 5, 9, 0.78), rgba(3, 5, 9, 0.88)), 
+                        url('https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80') center/cover no-repeat;
         }
 
         .status-bars { position: absolute; top: 8px; left: 10px; display: flex; flex-direction: column; gap: 4px; z-index: 10; }
@@ -78,9 +77,12 @@
         .car-title { position: absolute; top: 28px; font-size: 0.85rem; font-weight: 900; color: #fff; text-align: center; }
 
         .car-wrapper {
-            width: 280px; height: 130px; position: relative;
+            width: 290px; height: 135px; position: relative;
             transition: transform 0.05s ease; display: flex; align-items: center; justify-content: center;
+            border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            border: 1px solid rgba(255,255,255,0.1);
         }
+        .car-wrapper img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.9) contrast(1.1); }
         .car-wrapper.hit { transform: scale(0.95) translateY(3px); }
         .car-wrapper.empty { opacity: 0.25; filter: grayscale(1); }
 
@@ -93,7 +95,6 @@
             100% { opacity: 0; transform: translateY(-35px) scale(1.2); }
         }
 
-        /* СЕТКА ДЕТАЛЕЙ */
         .parts-grid {
             display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
             min-height: 80px; flex-shrink: 0; margin-bottom: 6px; width: 100%;
@@ -108,7 +109,6 @@
         .part-name { font-size: 0.65rem; font-weight: 800; color: #fff; text-align: center; }
         .part-info { font-size: 0.6rem; font-weight: 800; color: var(--neon-cyan); }
 
-        /* НАВИГАЦИЯ */
         .bottom-bar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; height: 52px; width: 100%; flex-shrink: 0; }
         .nav-item {
             background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 10px;
@@ -119,7 +119,6 @@
         .nav-icon { font-size: 1rem; }
         .nav-label { font-size: 0.5rem; font-weight: 800; color: var(--text-sub); text-transform: uppercase; }
 
-        /* МОДАЛКИ */
         .modal-bg {
             position: fixed; inset: 0; background: rgba(2, 4, 8, 0.92);
             display: none; justify-content: center; align-items: center;
@@ -374,12 +373,11 @@
             LEGENDARY: { name: "Легенда", color: "#ffd700", mult: 7.0 }
         };
 
-        // Здоровье машин уменьшено примерно в 2 раза для быстрого и комфортного геймплея
         var CARS = [
-            { id: 1, name: "Rusty Sedan", minLvl: 1, rarity: "COMMON", hp: 14, reward: 80, rust: 10 },
-            { id: 2, name: "Vortex Sport", minLvl: 2, rarity: "RARE", hp: 28, reward: 220, rust: 20 },
-            { id: 3, name: "Cyber Truck X", minLvl: 4, rarity: "EPIC", hp: 60, reward: 750, rust: 35 },
-            { id: 4, name: "Phantom Hypercar", minLvl: 7, rarity: "LEGENDARY", hp: 140, reward: 2800, rust: 50 }
+            { id: 1, name: "Rusty Sedan", minLvl: 1, rarity: "COMMON", hp: 14, reward: 80, rust: 10, img: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=600&q=80" },
+            { id: 2, name: "Vortex Sport", minLvl: 2, rarity: "RARE", hp: 28, reward: 220, rust: 20, img: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=600&q=80" },
+            { id: 3, name: "Cyber Truck X", minLvl: 4, rarity: "EPIC", hp: 60, reward: 750, rust: 35, img: "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=600&q=80" },
+            { id: 4, name: "Phantom Hypercar", minLvl: 7, rarity: "LEGENDARY", hp: 140, reward: 2800, rust: 50, img: "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=600&q=80" }
         ];
 
         var audioCtx = null;
@@ -494,44 +492,6 @@
             });
         }
 
-        function getRealisticCarSVG(id, color) {
-            if(id === 1) { // Rusty Sedan
-                return `<svg viewBox="0 0 300 130" style="width:100%; height:100%;">
-                    <ellipse cx="150" cy="115" rx="120" ry="6" fill="#000" opacity="0.5"/>
-                    <path d="M40 85 L70 50 L120 42 L200 45 L245 65 L275 85 Z" fill="${color}" stroke="#333" stroke-width="2"/>
-                    <path d="M75 52 L115 45 L155 45 L155 80 L65 80 Z" fill="#223" opacity="0.6"/>
-                    <path d="M165 45 L215 48 L235 80 L165 80 Z" fill="#223" opacity="0.6"/>
-                    <circle cx="85" cy="92" r="18" fill="#111" stroke="#444" stroke-width="5"/>
-                    <circle cx="215" cy="92" r="18" fill="#111" stroke="#444" stroke-width="5"/>
-                    <path d="M35 80 Q55 75 75 85" stroke="#d84315" stroke-width="3" fill="none"/>
-                </svg>`;
-            } else if(id === 2) { // Vortex Sport
-                return `<svg viewBox="0 0 300 130" style="width:100%; height:100%;">
-                    <ellipse cx="150" cy="115" rx="125" ry="6" fill="#000" opacity="0.6"/>
-                    <path d="M30 90 L60 45 L130 35 L220 50 L280 85 Z" fill="${color}" stroke="#00e5ff" stroke-width="1.5"/>
-                    <path d="M85 47 L130 38 L180 38 L200 80 L75 80 Z" fill="#00ffff" opacity="0.3"/>
-                    <circle cx="80" cy="90" r="17" fill="#0f172a" stroke="#00e5ff" stroke-width="4"/>
-                    <circle cx="220" cy="90" r="17" fill="#0f172a" stroke="#00e5ff" stroke-width="4"/>
-                </svg>`;
-            } else if(id === 3) { // Cyber Truck X
-                return `<svg viewBox="0 0 300 130" style="width:100%; height:100%;">
-                    <ellipse cx="150" cy="115" rx="130" ry="7" fill="#000" opacity="0.7"/>
-                    <polygon points="20,90 80,30 220,30 280,85 280,95 20,95" fill="${color}" stroke="#ab47bc" stroke-width="2"/>
-                    <polygon points="85,35 210,35 230,80 75,80" fill="#111" opacity="0.8"/>
-                    <circle cx="85" cy="92" r="19" fill="#111" stroke="#ab47bc" stroke-width="5"/>
-                    <circle cx="215" cy="92" r="19" fill="#111" stroke="#ab47bc" stroke-width="5"/>
-                </svg>`;
-            } else { // Phantom Hypercar
-                return `<svg viewBox="0 0 300 130" style="width:100%; height:100%;">
-                    <ellipse cx="150" cy="115" rx="135" ry="8" fill="#000" opacity="0.8"/>
-                    <path d="M20 95 C 60 50, 140 25, 260 70 L 290 95 Z" fill="${color}" stroke="#ffd700" stroke-width="2"/>
-                    <path d="M90 48 Q 140 32, 190 48 L 180 85 L 85 85 Z" fill="#ffd700" opacity="0.25"/>
-                    <circle cx="80" cy="94" r="18" fill="#000" stroke="#ffd700" stroke-width="5"/>
-                    <circle cx="220" cy="94" r="18" fill="#000" stroke="#ffd700" stroke-width="5"/>
-                </svg>`;
-            }
-        }
-
         function orderCar() {
             if(game.activeCar) return;
 
@@ -555,7 +515,7 @@
             var badge = document.getElementById('car-rarity-badge');
             badge.innerText = r.name; badge.style.background = r.color; badge.style.display = 'block';
             document.getElementById('car-title-text').innerText = tmpl.name;
-            document.getElementById('car-box').innerHTML = getRealisticCarSVG(tmpl.id, r.color);
+            document.getElementById('car-box').innerHTML = `<img src="${tmpl.img}" alt="${tmpl.name}">`;
             document.getElementById('car-box').classList.remove('empty');
 
             updateUI();
