@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Scrap Empire 2.0: Ultimate Garage</title>
+    <title>Scrap Empire 3.0: Refined</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -14,12 +14,7 @@
             --neon-purple: #9c27b0;
             --neon-gold: #ffd700;
             --neon-green: #00e676;
-            --neon-red: #ff1744;
             --rarity-common: #b0bec5;
-            --rarity-rare: #29b6f6;
-            --rarity-epic: #ab47bc;
-            --rarity-legendary: #ffa726;
-            --rarity-mythic: #ff1744;
             --text-main: #ffffff;
             --text-sub: #90a4ae;
         }
@@ -33,16 +28,13 @@
 
         body {
             width: 100vw; height: 100dvh;
-            background: 
-                radial-gradient(circle at 50% 20%, rgba(0, 229, 255, 0.15), transparent 70%),
-                radial-gradient(circle at 80% 80%, rgba(156, 39, 176, 0.2), transparent 60%),
-                linear-gradient(180deg, #070913 0%, #030408 100%);
+            background: radial-gradient(circle at 50% 20%, rgba(0, 229, 255, 0.15), transparent 70%),
+                        linear-gradient(180deg, #070913 0%, #030408 100%);
             color: var(--text-main); overflow: hidden;
             display: flex; flex-direction: column; justify-content: space-between;
             padding: calc(8px + env(safe-area-inset-top)) 10px calc(8px + env(safe-area-inset-bottom));
         }
 
-        /* ТОР ПАНЕЛЬ И ОБЩИЙ УРОВЕНЬ */
         .top-container { display: flex; flex-direction: column; gap: 6px; width: 100%; }
         
         .level-bar-box {
@@ -50,8 +42,8 @@
             border-radius: 12px; padding: 6px 12px; display: flex; align-items: center; justify-content: space-between;
             backdrop-filter: blur(8px);
         }
-        .level-badge { font-weight: 900; font-size: 0.85rem; color: var(--neon-gold); display: flex; align-items: center; gap: 4px; }
-        .xp-track { flex: 1; height: 8px; background: rgba(255,255,255,0.1); margin: 0 10px; border-radius: 4px; overflow: hidden; position: relative; }
+        .level-badge { font-weight: 900; font-size: 0.85rem; color: var(--neon-gold); }
+        .xp-track { flex: 1; height: 8px; background: rgba(255,255,255,0.1); margin: 0 10px; border-radius: 4px; overflow: hidden; }
         .xp-fill { width: 0%; height: 100%; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple)); transition: width 0.3s ease; }
         .xp-text { font-size: 0.7rem; color: var(--text-sub); font-weight: 700; }
 
@@ -60,71 +52,52 @@
             background: var(--panel-bg); border: 1px solid var(--panel-border);
             border-radius: 12px; padding: 4px 10px; display: flex; align-items: center; gap: 6px;
             font-size: 0.8rem; font-weight: 800; flex: 1; justify-content: center; height: 100%;
-            backdrop-filter: blur(8px);
         }
         .btn-icon {
             background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 12px;
             min-width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
-            font-size: 1.1rem; cursor: pointer; backdrop-filter: blur(8px);
+            font-size: 1.1rem; cursor: pointer;
         }
-        .btn-icon:active { transform: scale(0.92); }
 
-        /* ЗОНА ГАРАЖА */
         .garage-area {
             flex: 1; margin: 8px 0; border-radius: 20px;
             border: 1px solid rgba(0, 229, 255, 0.2);
             position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            overflow: hidden;
-            background: radial-gradient(ellipse at center, rgba(20, 30, 55, 0.7) 0%, rgba(5, 7, 15, 0.95) 100%);
-            backdrop-filter: blur(4px); box-shadow: inset 0 0 50px rgba(0,0,0,0.9);
+            overflow: hidden; background: radial-gradient(ellipse at center, rgba(20, 30, 55, 0.7) 0%, rgba(5, 7, 15, 0.95) 100%);
         }
 
         .car-badge-rarity {
             position: absolute; top: 10px; padding: 4px 12px; border-radius: 20px;
-            font-size: 0.65rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.5); display: none;
+            font-size: 0.65rem; font-weight: 900; text-transform: uppercase; display: none;
         }
 
         .car-title {
             position: absolute; top: 34px; font-size: 0.85rem; font-weight: 900;
-            color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.8); text-transform: uppercase; text-align: center;
+            color: #fff; text-transform: uppercase; text-align: center;
         }
 
-        /* ШКАЛА РАЗБОРКИ ТЕКУЩЕГО АВТО */
         .disassemble-progress-container {
             position: absolute; top: 58px; width: 60%; height: 6px;
             background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; display: none;
         }
-        .disassemble-progress-bar {
-            height: 100%; width: 0%; background: var(--neon-green); transition: width 0.2s ease;
-        }
+        .disassemble-progress-bar { height: 100%; width: 0%; background: var(--neon-green); transition: width 0.2s ease; }
 
         .car-wrapper {
             width: 290px; height: 130px; position: relative;
-            transition: transform 0.1s ease, filter 0.3s ease;
-            display: flex; align-items: center; justify-content: center;
+            transition: transform 0.1s ease; display: flex; align-items: center; justify-content: center;
         }
-        .car-wrapper.hit { transform: scale(0.96) translateY(2px); }
+        .car-wrapper.hit { transform: scale(0.96); }
         .car-wrapper.empty { opacity: 0.25; filter: grayscale(1); }
 
         .fx-text {
-            position: absolute; font-weight: 900;
-            font-size: 1.2rem; pointer-events: none; animation: flyUp 0.6s ease-out forwards;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.9); z-index: 50;
+            position: absolute; font-weight: 900; font-size: 1.2rem; pointer-events: none;
+            animation: flyUp 0.6s ease-out forwards; z-index: 50;
         }
         @keyframes flyUp {
             0% { opacity: 1; transform: translateY(0) scale(0.8); }
             100% { opacity: 0; transform: translateY(-40px) scale(1.2); }
         }
 
-        .btn-restore {
-            position: absolute; bottom: 10px; background: linear-gradient(90deg, #ff9800, #f57c00);
-            border: none; color: #fff; font-weight: 900; font-size: 0.7rem;
-            padding: 8px 16px; border-radius: 20px; box-shadow: 0 4px 15px rgba(255, 152, 0, 0.5);
-            cursor: pointer; display: none; z-index: 10; text-transform: uppercase;
-        }
-
-        /* СЕТКА ДЕТАЛЕЙ */
         .parts-grid {
             display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
             min-height: 75px; flex-shrink: 0; margin-bottom: 8px; width: 100%;
@@ -132,25 +105,21 @@
         .part-btn {
             background: var(--panel-bg); border: 1px solid var(--panel-border);
             border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 6px; cursor: pointer; backdrop-filter: blur(8px); position: relative; overflow: hidden;
+            padding: 6px; cursor: pointer; position: relative;
         }
-        .part-btn:active { transform: scale(0.94); }
-        .part-btn.disabled { opacity: 0.25; pointer-events: none; border-color: transparent; }
+        .part-btn.disabled { opacity: 0.25; pointer-events: none; }
         .part-name { font-size: 0.68rem; font-weight: 800; color: #fff; text-align: center; }
         .part-info { font-size: 0.65rem; font-weight: 800; color: var(--neon-cyan); margin-top: 2px; }
 
-        /* НАВИГАЦИЯ */
         .bottom-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; height: 54px; width: 100%; flex-shrink: 0; }
         .nav-item {
             background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 12px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 2px; cursor: pointer; backdrop-filter: blur(8px);
+            gap: 2px; cursor: pointer;
         }
-        .nav-item:active { transform: scale(0.93); border-color: var(--neon-cyan); }
         .nav-icon { font-size: 1.1rem; }
         .nav-label { font-size: 0.55rem; font-weight: 800; color: var(--text-sub); text-transform: uppercase; }
 
-        /* МОДАЛЬНЫЕ ОКНА */
         .modal-bg {
             position: fixed; inset: 0; background: rgba(4, 6, 12, 0.88);
             display: none; justify-content: center; align-items: center;
@@ -159,7 +128,7 @@
         .modal-box {
             background: rgba(18, 24, 42, 0.95); border: 1px solid var(--neon-cyan);
             border-radius: 20px; width: 100%; max-width: 340px; padding: 18px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; gap: 10px;
+            display: flex; flex-direction: column; gap: 10px; max-height: 80vh; overflow-y: auto;
         }
         .modal-head { font-size: 1rem; font-weight: 900; color: var(--neon-gold); text-align: center; }
         .modal-body { font-size: 0.8rem; color: var(--text-sub); text-align: center; line-height: 1.4; }
@@ -167,25 +136,26 @@
         .btn-act {
             background: linear-gradient(90deg, var(--neon-cyan), #00b0ff); border: none;
             color: #000; font-weight: 900; font-size: 0.8rem; padding: 10px;
-            border-radius: 12px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px;
+            border-radius: 12px; cursor: pointer; text-align: center;
         }
-        .btn-act.disabled { opacity: 0.5; pointer-events: none; }
+        .btn-act.disabled { opacity: 0.4; pointer-events: none; }
         .btn-close {
             background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
             color: var(--text-sub); font-weight: 800; font-size: 0.75rem; padding: 8px;
             border-radius: 10px; cursor: pointer; text-align: center;
         }
 
-        .donat-card {
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px; padding: 10px; display: flex; justify-content: space-between; align-items: center;
+        .index-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+        .index-card {
+            background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px;
+            display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem;
         }
+        .index-card.unlocked { border-left: 3px solid var(--neon-gold); }
 
         .toast-msg {
             position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
             background: var(--neon-cyan); color: #000; padding: 6px 16px; border-radius: 20px;
             font-size: 0.75rem; font-weight: 900; display: none; z-index: 200;
-            box-shadow: 0 4px 15px rgba(0,229,255,0.4); text-align: center;
         }
     </style>
 </head>
@@ -193,7 +163,6 @@
 
     <div class="toast-msg" id="toast">Уведомление</div>
 
-    <!-- ТОР ПАНЕЛЬ: УРОВЕНЬ И РЕСУРСЫ -->
     <div class="top-container">
         <div class="level-bar-box">
             <div class="level-badge">⭐ УР. <span id="lvl-val">1</span></div>
@@ -202,14 +171,13 @@
         </div>
 
         <div class="header-bar">
-            <div class="btn-icon" onclick="openModal('shop-modal')" title="Донат">💎</div>
+            <div class="btn-icon" onclick="openModal('shop-modal')">💎</div>
             <div class="res-pill" style="color: var(--neon-gold)">🪙 <span id="m-val">1,000</span></div>
             <div class="res-pill" style="color: var(--neon-cyan)">💎 <span id="g-val">10</span></div>
-            <div class="btn-icon" onclick="openModal('rebirth-modal')" title="Перерождение">🏛️</div>
+            <div class="btn-icon" onclick="openModal('rebirth-modal')">🏛️</div>
         </div>
     </div>
 
-    <!-- ИГРОВАЯ ЗОНА С АВТОМОБИЛЕМ -->
     <div class="garage-area" id="garage-viewport">
         <div class="car-badge-rarity" id="car-rarity-badge">COMMON</div>
         <div class="car-title" id="car-title-text">НАЖМИ "ЗАКАЗ" ВНИЗУ</div>
@@ -219,13 +187,10 @@
         </div>
 
         <div class="car-wrapper empty" id="car-box"></div>
-        <button class="btn-restore" id="restore-btn" onclick="restoreCar()">🎨 РЕСТАВРИРОВАТЬ И ПРОДАТЬ</button>
     </div>
 
-    <!-- ДЕТАЛИ -->
     <div class="parts-grid" id="parts-box"></div>
 
-    <!-- НАВИГАЦИЯ -->
     <div class="bottom-bar">
         <div class="nav-item" onclick="orderCar()">
             <div class="nav-icon">🚗</div>
@@ -235,13 +200,13 @@
             <div class="nav-icon">🧰</div>
             <div class="nav-label">Ключи</div>
         </div>
-        <div class="nav-item" onclick="openModal('wheel-modal')">
-            <div class="nav-icon">🎰</div>
-            <div class="nav-label">Рулетка</div>
+        <div class="nav-item" onclick="openIndexModal()">
+            <div class="nav-icon">📖</div>
+            <div class="nav-label">Индекс</div>
         </div>
-        <div class="nav-item" onclick="openModal('vault-modal')">
-            <div class="nav-icon">💼</div>
-            <div class="nav-label">Сейф</div>
+        <div class="nav-item" onclick="openModal('rebirth-modal')">
+            <div class="nav-icon">🏛️</div>
+            <div class="nav-label">Престиж</div>
         </div>
         <div class="nav-item" onclick="openModal('shop-modal')">
             <div class="nav-icon">💎</div>
@@ -249,278 +214,153 @@
         </div>
     </div>
 
-    <!-- МОДАЛКА: ИНСТРУМЕНТЫ -->
+    <!-- ИНСТРУМЕНТЫ -->
     <div class="modal-bg" id="tools-modal">
         <div class="modal-box">
-            <div class="modal-head">🧰 ИНСТРУМЕНТЫ</div>
+            <div class="modal-head">🧰 КЛЮЧИ И УРОН</div>
             <div class="modal-body">
                 Уровень инструмента: <b style="color:var(--neon-cyan);" id="tool-lvl-display">1</b><br>
-                Название: <b style="color:#fff;" id="tool-name">Гаечный ключ</b><br>
                 Урон за клик: <b style="color:var(--neon-gold);" id="tool-power-display">1</b>
             </div>
-            <button class="btn-act" id="tool-up-btn" onclick="upTool()">УЛУЧШИТЬ (🪙 <span id="tool-cost-display">200</span>)</button>
+            <button class="btn-act" id="tool-up-btn" onclick="upTool()">УЛУЧШИТЬ (🪙 <span id="tool-cost-display">100</span>)</button>
             <div class="btn-close" onclick="closeModal('tools-modal')">ЗАКРЫТЬ</div>
         </div>
     </div>
 
-    <!-- МОДАЛКА: ДОНАТ С ИНТЕГРАЦИЕЙ -->
-    <div class="modal-bg" id="shop-modal">
+    <!-- ИНДЕКС МАШИН -->
+    <div class="modal-bg" id="index-modal">
         <div class="modal-box">
-            <div class="modal-head">💎 МАГАЗИН И ДОНАТ</div>
-            <div class="modal-body">Мгновенное зачисление кристаллов:</div>
-            
-            <div class="donat-card">
-                <div><b>100 💎 Кристаллов</b><br><small style="color:var(--text-sub)">⭐ 50 Stars</small></div>
-                <button class="btn-act" style="padding: 6px 12px;" onclick="processPayment('100 💎', 100)">💳 $0.99</button>
-            </div>
-            <div class="donat-card">
-                <div><b>600 💎 Кристаллов</b><br><small style="color:var(--text-sub)">⭐ 250 Stars</small></div>
-                <button class="btn-act" style="padding: 6px 12px;" onclick="processPayment('600 💎', 600)">💳 $4.99</button>
-            </div>
-            <div class="donat-card">
-                <div><b>2000 💎 Кристаллов</b><br><small style="color:var(--text-sub)">⭐ 1000 Stars</small></div>
-                <button class="btn-act" style="padding: 6px 12px;" onclick="processPayment('2000 💎', 2000)">💳 $14.99</button>
-            </div>
-
-            <div class="btn-close" onclick="closeModal('shop-modal')">ЗАКРЫТЬ</div>
+            <div class="modal-head">📖 ИНДЕКС АВТОМОБИЛЕЙ</div>
+            <div class="modal-body">Соберите и разоберите все машины!</div>
+            <div class="index-list" id="index-list-box"></div>
+            <div class="btn-close" onclick="closeModal('index-modal')">ЗАКРЫТЬ</div>
         </div>
     </div>
 
-    <!-- МОДАЛКА: ПЕРЕРОЖДЕНИЕ (PRESTIGE) -->
+    <!-- ПЕРЕРОЖДЕНИЕ -->
     <div class="modal-bg" id="rebirth-modal">
         <div class="modal-box">
             <div class="modal-head">🏛️ ПЕРЕРОЖДЕНИЕ</div>
             <div class="modal-body">
-                Сбрасывает монеты и уровень инструмента, но дает **Очки Перерождения**.<br><br>
-                Текущие очки: <b style="color:var(--neon-gold);" id="rebirth-pts-val">0</b><br>
-                Бонус к прибыли: <b style="color:var(--neon-green);" id="rebirth-bonus-val">+0%</b><br><br>
-                <small style="color:var(--text-sub)">Требуется **10 уровень игрока**!</small>
+                Требуется: <b>10 Уровень Игрока</b><br><br>
+                Текущий бонус прибыли: <b style="color:var(--neon-green);" id="rebirth-bonus-val">+0%</b><br>
+                После перерождения: <b style="color:var(--neon-gold);" id="rebirth-next-val">+0.5%</b><br><br>
+                <small style="color:#ff1744;">⚠️ Уровень игрока и монеты сбросятся!</small>
             </div>
-            <button class="btn-act" id="rebirth-act-btn" onclick="doRebirth()">СДЕЛАТЬ ПЕРЕРОЖДЕНИЕ (+10 Очков)</button>
+            <button class="btn-act" id="rebirth-act-btn" onclick="doRebirth()">СДЕЛАТЬ ПЕРЕРОЖДЕНИЕ</button>
             <div class="btn-close" onclick="closeModal('rebirth-modal')">ЗАКРЫТЬ</div>
         </div>
     </div>
 
-    <!-- МОДАЛКА: РУЛЕТКА -->
-    <div class="modal-bg" id="wheel-modal">
+    <!-- МАГАЗИН -->
+    <div class="modal-bg" id="shop-modal">
         <div class="modal-box">
-            <div class="modal-head">🎰 КОЛЕСО ФОРТУНЫ</div>
-            <div class="modal-body">Испытай удачу! Выигрывай 🪙 Монеты или 💎 Кристаллы!</div>
-            <button class="btn-act" onclick="spinWheel()">КРУТИТЬ РУЛЕТКУ</button>
-            <div class="btn-close" onclick="closeModal('wheel-modal')">ЗАКРЫТЬ</div>
-        </div>
-    </div>
-
-    <!-- МОДАЛКА: СЕЙФ -->
-    <div class="modal-bg" id="vault-modal">
-        <div class="modal-box">
-            <div class="modal-head">💼 ОФФЛАЙН СЕЙФ</div>
-            <div class="modal-body">Накопленный пассивный доход:<br><b style="color:var(--neon-gold); font-size:1.3rem;" id="offline-val">🪙 0</b></div>
-            <button class="btn-act" onclick="claimOffline()">ЗАБРАТЬ</button>
-            <div class="btn-close" onclick="closeModal('vault-modal')">ЗАКРЫТЬ</div>
+            <div class="modal-head">💎 МАГАЗИН</div>
+            <div class="modal-body">Получите мгновенные кристаллы:</div>
+            <button class="btn-act" onclick="buyGems(100)">100 💎 ($0.99)</button>
+            <button class="btn-act" onclick="buyGems(500)">500 💎 ($3.99)</button>
+            <div class="btn-close" onclick="closeModal('shop-modal')">ЗАКРЫТЬ</div>
         </div>
     </div>
 
     <script>
         var game = {
-            money: 1000, gems: 10, 
+            money: 500, gems: 10,
             playerLvl: 1, xp: 0, xpMax: 100,
-            toolLvl: 1, 
-            rebirthPoints: 0,
-            activeCar: null, offlineCoins: 250
+            toolLvl: 1,
+            rebirthCount: 0,
+            unlockedCars: {},
+            activeCar: null
         };
 
-        var RARITIES = {
-            COMMON: { name: "Обычная", color: "var(--rarity-common)", mult: 1.0 },
-            RARE: { name: "Редкая", color: "var(--rarity-rare)", mult: 1.8 },
-            EPIC: { name: "Эпическая", color: "var(--rarity-epic)", mult: 3.2 },
-            LEGENDARY: { name: "Легендарная", color: "var(--rarity-legendary)", mult: 6.0 },
-            MYTHIC: { name: "Мифическая", color: "var(--rarity-mythic)", mult: 12.0 }
-        };
-
-        var BRANDS = ["Apex", "Vortex", "Titan", "Phantom", "Neon", "Cyber", "Retro", "Aero", "Hyper", "Shadow"];
-        var MODELS = ["GT", "Speedster", "Cruiser", "Interceptor", "Monstertruck", "Rover", "Van", "Buggy", "Concept", "Prototype"];
-
-        // Генератор 200 уникальных авто по уровням
-        function generateCarsDatabase() {
-            var db = [];
-            var idCounter = 1;
-            for(var lvl = 1; lvl <= 50; lvl++) {
-                for(var c = 0; c < 4; c++) {
-                    var rarityKey = "COMMON";
-                    if(lvl >= 45 && c === 3) rarityKey = "MYTHIC";
-                    else if(lvl >= 30 && c >= 2) rarityKey = "LEGENDARY";
-                    else if(lvl >= 15 && c >= 2) rarityKey = "EPIC";
-                    else if(lvl >= 5 && c >= 1) rarityKey = "RARE";
-
-                    var brand = BRANDS[(idCounter * 3) % BRANDS.length];
-                    var model = MODELS[(idCounter * 7) % MODELS.length];
-
-                    // Фиксированная честная прочность деталей
-                    var baseHP = 10 + (lvl * 5);
-
-                    db.push({
-                        id: idCounter++,
-                        name: brand + " " + model + " Mk." + idCounter,
-                        minLevel: lvl,
-                        rarity: rarityKey,
-                        parts: [
-                            { id: 1, name: "🛞 Диски и Колеса", maxHp: baseHP, hp: baseHP, reward: 80 * lvl },
-                            { id: 2, name: "🚪 Дверные Панели", maxHp: Math.floor(baseHP * 1.5), hp: Math.floor(baseHP * 1.5), reward: 150 * lvl },
-                            { id: 3, name: "⚙️ Двигатель V8", maxHp: baseHP * 2, hp: baseHP * 2, reward: 300 * lvl }
-                        ]
-                    });
-                }
-            }
-            return db;
-        }
-
-        var CARS_DB = generateCarsDatabase();
-
-        var TOOLS_DATA = [
-            { name: "Гаечный ключ", baseCost: 150, power: 2 },
-            { name: "Трещотка PRO", baseCost: 500, power: 5 },
-            { name: "Пневмогайковерт", baseCost: 1800, power: 12 },
-            { name: "Импакт Аккумуляторный", baseCost: 6000, power: 25 },
-            { name: "Плазменный резак", baseCost: 20000, power: 60 },
-            { name: "Лазерный Демонтажник", baseCost: 75000, power: 150 }
+        var CARS_LIST = [
+            { id: 1, name: "Apex Beetle", minLvl: 1, hpBase: 12, reward: 50 },
+            { id: 2, name: "Vortex Sedan", minLvl: 2, hpBase: 25, reward: 120 },
+            { id: 3, name: "Titan Pickup", minLvl: 3, hpBase: 45, reward: 250 },
+            { id: 4, name: "Cyber Racer", minLvl: 5, hpBase: 80, reward: 500 },
+            { id: 5, name: "Phantom GT", minLvl: 8, hpBase: 150, reward: 1100 },
+            { id: 6, name: "Hyper Custom", minLvl: 10, hpBase: 300, reward: 2500 }
         ];
 
-        window.onload = function() {
-            if(window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.ready();
-                window.Telegram.WebApp.expand();
-            }
-            updateUI();
-        };
+        window.onload = function() { updateUI(); };
 
-        function showToast(msg) {
+        function showToast(m) {
             var t = document.getElementById('toast');
-            if(t) {
-                t.innerText = msg; t.style.display = 'block';
-                setTimeout(function() { t.style.display = 'none'; }, 2200);
-            }
+            t.innerText = m; t.style.display = 'block';
+            setTimeout(function(){ t.style.display = 'none'; }, 2000);
         }
 
-        function openModal(id) { var m = document.getElementById(id); if(m) m.style.display = 'flex'; }
-        function closeModal(id) { var m = document.getElementById(id); if(m) m.style.display = 'none'; }
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        // Дополнение: Исправленный честный донат
-        function processPayment(title, amountGems) {
-            var confirmPay = confirm("💳 Оплата пакета " + title + "\n\nПодтверждаете покупку?");
-            if(confirmPay) {
-                game.gems += amountGems;
-                updateUI();
-                showToast("🎉 Успешно получено: " + amountGems + " 💎!");
-                closeModal('shop-modal');
-            }
-        }
-
-        function addXP(amount) {
-            game.xp += amount;
+        function addXP(val) {
+            game.xp += val;
             if(game.xp >= game.xpMax) {
                 game.xp -= game.xpMax;
                 game.playerLvl++;
-                game.xpMax = Math.floor(game.xpMax * 1.4);
-                showToast("⭐ НОВЫЙ УРОВЕНЬ ИГРОКА: " + game.playerLvl + "!");
+                game.xpMax = Math.floor(game.xpMax * 1.5);
+                showToast("⭐ Новый уровень игрока: " + game.playerLvl);
             }
             updateUI();
         }
 
         function orderCar() {
-            if(game.activeCar) { showToast("⚠️ Сначала разберите текущую машину!"); return; }
+            if(game.activeCar) { showToast("⚠️ Сначала разберите текущее авто!"); return; }
 
-            var available = CARS_DB.filter(function(c) { return c.minLevel <= game.playerLvl; });
-            var template = available[Math.floor(Math.random() * available.length)];
-            var rarityInfo = RARITIES[template.rarity];
+            var pool = CARS_LIST.filter(function(c){ return c.minLvl <= game.playerLvl; });
+            var template = pool[Math.floor(Math.random() * pool.length)];
 
             game.activeCar = {
-                name: template.name,
-                rarityKey: template.rarity,
-                rarityInfo: rarityInfo,
-                restoreCost: Math.floor(template.minLevel * 200),
-                parts: JSON.parse(JSON.stringify(template.parts))
+                id: template.id, name: template.name,
+                parts: [
+                    { id: 1, name: "🛞 Колеса", maxHp: template.hpBase, hp: template.hpBase, reward: template.reward },
+                    { id: 2, name: "🚪 Корпус", maxHp: Math.floor(template.hpBase * 1.5), hp: Math.floor(template.hpBase * 1.5), reward: Math.floor(template.reward * 1.5) },
+                    { id: 3, name: "⚙️ Двигатель", maxHp: template.hpBase * 2, hp: template.hpBase * 2, reward: template.reward * 2.5 }
+                ]
             };
 
-            var rb = document.getElementById('car-rarity-badge');
-            rb.innerText = rarityInfo.name;
-            rb.style.background = rarityInfo.color;
-            rb.style.display = 'block';
+            game.unlockedCars[template.id] = true;
 
             document.getElementById('car-title-text').innerText = template.name;
-            document.getElementById('car-box').innerHTML = getCarSVG(template.rarity);
-            document.getElementById('restore-btn').innerText = "🎨 РЕСТАВРИРОВАТЬ ЗА 🪙 " + game.activeCar.restoreCost;
-            document.getElementById('restore-btn').style.display = 'block';
+            document.getElementById('car-box').innerHTML = `<svg viewBox="0 0 300 120" style="width:100%;"><rect x="30" y="40" width="240" height="50" rx="10" fill="#00e5ff"/><circle cx="70" cy="90" r="15" fill="#111"/><circle cx="230" cy="90" r="15" fill="#111"/></svg>`;
             document.getElementById('car-box').classList.remove('empty');
             document.getElementById('dis-progress-box').style.display = 'block';
 
             updateCarProgressBar();
             updateUI();
-            showToast("🚗 Доставлен: " + template.name);
-        }
-
-        // Более реалистичный векторный рисунок машин
-        function getCarSVG(rarity) {
-            var color = "#607d8b";
-            if(rarity === "RARE") color = "#0288d1";
-            if(rarity === "EPIC") color = "#8e24aa";
-            if(rarity === "LEGENDARY") color = "#fb8c00";
-            if(rarity === "MYTHIC") color = "#e53935";
-
-            return `<svg viewBox="0 0 300 120" fill="none" style="width:100%; height:100%;">
-                <defs>
-                    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="${color}" />
-                        <stop offset="100%" stop-color="#111" />
-                    </linearGradient>
-                </defs>
-                <ellipse cx="150" cy="102" rx="125" ry="8" fill="#000" opacity="0.7"/>
-                <path d="M25 78 L45 42 L115 32 L210 40 L265 62 L280 78 Z" fill="url(#bodyGrad)"/>
-                <path d="M60 44 L110 36 L110 58 L45 58 Z" fill="#cfd8dc" opacity="0.8"/>
-                <path d="M120 36 L192 39 L185 58 L120 58 Z" fill="#cfd8dc" opacity="0.8"/>
-                <rect x="20" y="74" width="262" height="10" rx="3" fill="#1c2326"/>
-                <circle cx="70" cy="82" r="18" fill="#0d1117" stroke="#b0bec5" stroke-width="4"/>
-                <circle cx="225" cy="82" r="18" fill="#0d1117" stroke="#b0bec5" stroke-width="4"/>
-                <circle cx="70" cy="82" r="6" fill="${color}"/>
-                <circle cx="225" cy="82" r="6" fill="${color}"/>
-            </svg>`;
         }
 
         function tapPart(e, id) {
             if(!game.activeCar) return;
-            var p = game.activeCar.parts.find(function(item){ return item.id === id; });
+            var p = game.activeCar.parts.find(function(x){ return x.id === id; });
 
             if(p && p.hp > 0) {
-                var tool = getToolData();
-                var isCrit = Math.random() < 0.15; // 15% Шанс Крита!
-                var damage = isCrit ? tool.power * 3 : tool.power;
-
-                p.hp -= damage;
+                // Плавный урон без сложного умножения
+                var power = game.toolLvl; 
+                p.hp -= power;
                 if(p.hp < 0) p.hp = 0;
 
-                // Визуальный отклик клика
-                var carBox = document.getElementById('car-box');
-                carBox.classList.add('hit');
-                setTimeout(function(){ carBox.classList.remove('hit'); }, 80);
+                // Настоящий рабочие процент перерождения!
+                var rebirthMult = 1 + (game.rebirthCount * 0.005); 
 
-                spawnFx(e, isCrit ? "⚡ " + damage : "-" + damage, isCrit ? "#ffd700" : "#00e5ff");
-                addXP(5);
-
-                if(p.hp <= 0) {
-                    // Бонус за перерождение: +0.5% за каждые 10 очков
-                    var rebirthBonus = 1 + (game.rebirthPoints * 0.005);
-                    var reward = Math.floor(p.reward * game.activeCar.rarityInfo.mult * rebirthBonus);
-                    game.money += reward;
-                    spawnFx(e, "+" + reward + "🪙", "#00e676");
+                if(p.hp === 0) {
+                    var gain = Math.floor(p.reward * rebirthMult);
+                    game.money += gain;
+                    spawnFx(e, "+" + gain + "🪙", "#00e676");
+                    addXP(15);
+                } else {
+                    spawnFx(e, "-" + power, "#00e5ff");
+                    addXP(2);
                 }
 
                 updateCarProgressBar();
 
-                var allDone = game.activeCar.parts.every(function(item){ return item.hp <= 0; });
-                if(allDone) {
-                    addXP(40);
-                    clearCar();
-                    showToast("🎉 Автомобиль полностью разобран!");
+                if(game.activeCar.parts.every(function(x){ return x.hp <= 0; })) {
+                    showToast("🎉 Авто полностью разобрано!");
+                    game.activeCar = null;
+                    document.getElementById('car-box').classList.add('empty');
+                    document.getElementById('car-title-text').innerText = "НАЖМИ \"ЗАКАЗ\" ВНИЗУ";
+                    document.getElementById('dis-progress-box').style.display = 'none';
                 }
                 updateUI();
             }
@@ -528,112 +368,88 @@
 
         function updateCarProgressBar() {
             if(!game.activeCar) return;
-            var totalHp = 0;
-            var currentHp = 0;
-            game.activeCar.parts.forEach(function(p){
-                totalHp += p.maxHp;
-                currentHp += p.hp;
-            });
-            var progress = ((totalHp - currentHp) / totalHp) * 100;
-            document.getElementById('dis-progress-bar').style.width = progress + "%";
-        }
-
-        function restoreCar() {
-            if(!game.activeCar) return;
-            if(game.money >= game.activeCar.restoreCost) {
-                game.money -= game.activeCar.restoreCost;
-                var rebirthBonus = 1 + (game.rebirthPoints * 0.005);
-                var profit = Math.floor(game.activeCar.restoreCost * 3.2 * game.activeCar.rarityInfo.mult * rebirthBonus);
-                game.money += profit;
-                addXP(80);
-
-                showToast("🎨 Авто реставрировано и продано за 🪙 " + profit.toLocaleString() + "!");
-                clearCar();
-                updateUI();
-            } else {
-                showToast("⚠️ Не хватает монет на реставрацию!");
-            }
-        }
-
-        function clearCar() {
-            game.activeCar = null;
-            document.getElementById('restore-btn').style.display = 'none';
-            document.getElementById('car-rarity-badge').style.display = 'none';
-            document.getElementById('dis-progress-box').style.display = 'none';
-            document.getElementById('car-box').classList.add('empty');
-            document.getElementById('car-box').innerHTML = '';
-            document.getElementById('car-title-text').innerText = "НАЖМИ \"ЗАКАЗ\" ВНИЗУ";
-        }
-
-        function getToolData() {
-            var idx = Math.min(game.toolLvl - 1, TOOLS_DATA.length - 1);
-            var tool = TOOLS_DATA[idx];
-            var cost = Math.floor(tool.baseCost * Math.pow(1.5, game.toolLvl - 1));
-            return { name: tool.name, power: tool.power * game.toolLvl, cost: cost };
+            var max = 0, cur = 0;
+            game.activeCar.parts.forEach(function(p){ max += p.maxHp; cur += p.hp; });
+            document.getElementById('dis-progress-bar').style.width = (((max - cur) / max) * 100) + "%";
         }
 
         function upTool() {
-            var tool = getToolData();
-            if(game.money >= tool.cost) {
-                game.money -= tool.cost;
+            var cost = game.toolLvl * 100;
+            if(game.money >= cost) {
+                game.money -= cost;
                 game.toolLvl++;
                 updateUI();
-                showToast("🧰 Инструмент улучшен!");
-            } else {
-                showToast("⚠️ Не хватает 🪙 " + tool.cost);
-            }
+                showToast("🧰 Ключ прокачан!");
+            } else showToast("⚠️ Не хватает монет!");
         }
 
         function doRebirth() {
-            if(game.playerLvl < 10) {
-                showToast("⚠️ Для перерождения нужен 10 уровень игрока!");
-                return;
-            }
-            game.rebirthPoints += 10;
-            game.money = 1000;
+            if(game.playerLvl < 10) { showToast("⚠️ Требуется 10 уровень!"); return; }
+            game.rebirthCount++;
+            game.playerLvl = 1;
+            game.xp = 0;
+            game.money = 500;
             game.toolLvl = 1;
-            clearCar();
+            game.activeCar = null;
+            document.getElementById('car-box').classList.add('empty');
             closeModal('rebirth-modal');
             updateUI();
-            showToast("🏛️ Перерождение выполнено! Урон и прибыль повышены!");
+            showToast("🏛️ Перерождение выполнено! +0.5% к прибыли навсегда!");
+        }
+
+        function openIndexModal() {
+            var list = document.getElementById('index-list-box');
+            list.innerHTML = '';
+            CARS_LIST.forEach(function(c) {
+                var isOpen = game.unlockedCars[c.id];
+                var div = document.createElement('div');
+                div.className = "index-card " + (isOpen ? "unlocked" : "");
+                div.innerHTML = `<span>${isOpen ? "🚗 " + c.name : "🔒 ??? (Ур. " + c.minLvl + ")"}</span><b>${isOpen ? "ОТКРЫТО" : "ЗАКРЫТО"}</b>`;
+                list.appendChild(div);
+            });
+            openModal('index-modal');
+        }
+
+        function buyGems(amt) {
+            game.gems += amt; updateUI(); closeModal('shop-modal');
+            showToast("💎 Куплено " + amt + " кристаллов!");
         }
 
         function updateUI() {
-            document.getElementById('m-val').innerText = Math.floor(game.money).toLocaleString();
+            document.getElementById('m-val').innerText = game.money.toLocaleString();
             document.getElementById('g-val').innerText = game.gems;
             document.getElementById('lvl-val').innerText = game.playerLvl;
             document.getElementById('xp-val').innerText = game.xp;
             document.getElementById('xp-max-val').innerText = game.xpMax;
             document.getElementById('xp-fill').style.width = (game.xp / game.xpMax * 100) + "%";
 
-            var tool = getToolData();
             document.getElementById('tool-lvl-display').innerText = game.toolLvl;
-            document.getElementById('tool-name').innerText = tool.name;
-            document.getElementById('tool-power-display').innerText = tool.power;
-            document.getElementById('tool-cost-display').innerText = tool.cost.toLocaleString();
+            document.getElementById('tool-power-display').innerText = game.toolLvl;
+            document.getElementById('tool-cost-display').innerText = (game.toolLvl * 100).toLocaleString();
 
-            document.getElementById('rebirth-pts-val').innerText = game.rebirthPoints;
-            document.getElementById('rebirth-bonus-val').innerText = "+" + (game.rebirthPoints * 0.5).toFixed(1) + "%";
+            var bonusPercent = (game.rebirthCount * 0.5).toFixed(1);
+            document.getElementById('rebirth-bonus-val').innerText = "+" + bonusPercent + "%";
+            document.getElementById('rebirth-next-val').innerText = "+" + ((game.rebirthCount + 1) * 0.5).toFixed(1) + "%";
 
-            document.getElementById('offline-val').innerText = "🪙 " + game.offlineCoins;
+            var btn = document.getElementById('rebirth-act-btn');
+            if(game.playerLvl >= 10) btn.classList.remove('disabled');
+            else btn.classList.add('disabled');
+
             renderParts();
         }
 
         function renderParts() {
             var b = document.getElementById('parts-box');
-            if(!b) return;
             b.innerHTML = '';
-
             if(!game.activeCar) {
-                b.innerHTML = '<div style="grid-column:span 3; text-align:center; font-size:0.75rem; color:var(--text-sub); align-self:center;">Нажмите 🚗 ЗАКАЗ чтобы доставить авто</div>';
+                b.innerHTML = '<div style="grid-column:span 3; text-align:center; font-size:0.75rem; color:var(--text-sub); align-self:center;">Закажите авто для разборки</div>';
                 return;
             }
-
             game.activeCar.parts.forEach(function(p) {
                 var card = document.createElement('div');
                 card.className = "part-btn " + (p.hp <= 0 ? "disabled" : "");
                 card.onclick = function(e) { tapPart(e, p.id); };
-                card.innerHTML = '<div class="part-name">' + p.name + '</div><div class="part-info">' + (p.hp > 0 ? '❤️ ' + p.hp + ' HP' : 'СНЯТО') + '</div>';
+                card.innerHTML = `<div class="part-name">${p.name}</div><div class="part-info">${p.hp > 0 ? '❤️ ' + p.hp + ' HP' : 'СНЯТО'}</div>`;
                 b.appendChild(card);
             });
         }
@@ -649,18 +465,6 @@
             ft.style.top = (e.clientY - rect.top) + 'px';
             vp.appendChild(ft);
             setTimeout(function() { ft.remove(); }, 600);
-        }
-
-        function spinWheel() {
-            game.money += 2000;
-            closeModal('wheel-modal');
-            showToast("🎰 Выиграно 🪙 2,000!");
-            updateUI();
-        }
-
-        function claimOffline() {
-            game.money += game.offlineCoins; game.offlineCoins = 0;
-            updateUI(); closeModal('vault-modal'); showToast("💼 Сейф опустошен!");
         }
     </script>
 </body>
