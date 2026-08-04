@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Scrap Empire ULTIMATE 10.1</title>
+    <title>Scrap Empire ULTIMATE 10.2</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -37,7 +37,7 @@
         .level-bar-box {
             background: var(--panel-bg); border: 1px solid var(--panel-border);
             border-radius: 12px; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between;
-            box-shadow: 0 4px 20px rgba(0,229,255,0.1);
+            box-shadow: 0 4px 20px rgba(0,229,255,0.1); cursor: pointer;
         }
         .level-badge { font-weight: 900; font-size: 0.75rem; color: var(--neon-gold); }
         .xp-track { flex: 1; height: 8px; background: rgba(255,255,255,0.06); margin: 0 8px; border-radius: 4px; overflow: hidden; }
@@ -57,11 +57,13 @@
         }
         .btn-icon:active { transform: scale(0.92); }
 
-        /* ИГРОВАЯ АРЕНА */
+        /* ИГРОВАЯ АРЕНА С ФОНОВЫМ ИЗОБРАЖЕНИЕМ ЦЕХА */
         .garage-area {
             flex: 1; margin: 6px 0; border-radius: 16px; border: 1px solid var(--panel-border);
             position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            overflow: hidden; background: radial-gradient(ellipse at center, rgba(15, 25, 45, 0.9) 0%, rgba(2, 4, 8, 0.98) 100%);
+            overflow: hidden; 
+            background: linear-gradient(rgba(3, 5, 9, 0.82), rgba(3, 5, 9, 0.92)), 
+                        url('https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80') center/cover no-repeat;
         }
 
         .status-bars { position: absolute; top: 8px; left: 10px; display: flex; flex-direction: column; gap: 4px; z-index: 10; }
@@ -80,7 +82,7 @@
             transition: transform 0.05s ease; display: flex; align-items: center; justify-content: center;
         }
         .car-wrapper.hit { transform: scale(0.95) translateY(3px); }
-        .car-wrapper.empty { opacity: 0.2; filter: grayscale(1); }
+        .car-wrapper.empty { opacity: 0.25; filter: grayscale(1); }
 
         .fx-text {
             position: absolute; font-weight: 900; font-size: 1.1rem; pointer-events: none;
@@ -162,7 +164,7 @@
     <div class="toast-msg" id="toast">Сообщение</div>
 
     <div class="top-container">
-        <div class="level-bar-box">
+        <div class="level-bar-box" onclick="openModal('levels-modal')">
             <div class="level-badge">⭐ УР. <span id="lvl-val">1</span></div>
             <div class="xp-track"><div class="xp-fill" id="xp-fill"></div></div>
             <div class="xp-text"><span id="xp-val">0</span> / <span id="xp-max-val">100</span> XP</div>
@@ -214,6 +216,16 @@
         <div class="nav-item" onclick="openModal('rebirth-modal')">
             <div class="nav-icon">🏛️</div>
             <div class="nav-label">Престиж</div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА: УРОВНИ И НАГРАДЫ -->
+    <div class="modal-bg" id="levels-modal">
+        <div class="modal-box">
+            <div class="modal-head">⭐ УРОВНИ И ПРОГРЕСС</div>
+            <div class="modal-body">Текущий уровень: <b style="color:var(--neon-gold)" id="modal-curr-lvl">1</b></div>
+            <div style="display:flex; flex-direction:column; gap:6px;" id="levels-list-container"></div>
+            <div class="btn-close" onclick="closeModal('levels-modal')">ЗАКРЫТЬ</div>
         </div>
     </div>
 
@@ -345,6 +357,16 @@
             radioActive: false
         };
 
+        var LEVEL_UNLOCKS = [
+            { lvl: 1, title: "Уровень 1", desc: "Доступна машина: Rusty Sedan" },
+            { lvl: 2, title: "Уровень 2", desc: "Доступна машина: Vortex Sport" },
+            { lvl: 3, title: "Уровень 3", desc: "Улучшенные контракты и награды" },
+            { lvl: 4, title: "Уровень 4", desc: "Доступна машина: Cyber Truck X" },
+            { lvl: 5, title: "Уровень 5", desc: "Ускоренный черный рынок" },
+            { lvl: 7, title: "Уровень 7", desc: "Доступна машина: Phantom Hypercar" },
+            { lvl: 10, title: "Уровень 10", desc: "Разблокировка системы Престиж (Перерождение)" }
+        ];
+
         var RARITY = {
             COMMON: { name: "Обычная", color: "#b0bec5", mult: 1.0 },
             RARE: { name: "Редкая", color: "#00e5ff", mult: 1.8 },
@@ -352,11 +374,12 @@
             LEGENDARY: { name: "Легенда", color: "#ffd700", mult: 7.0 }
         };
 
+        // Здоровье машин уменьшено примерно в 2 раза для быстрого и комфортного геймплея
         var CARS = [
-            { id: 1, name: "Rusty Sedan", minLvl: 1, rarity: "COMMON", hp: 30, reward: 90, rust: 20 },
-            { id: 2, name: "Vortex Sport", minLvl: 2, rarity: "RARE", hp: 60, reward: 250, rust: 40 },
-            { id: 3, name: "Cyber Truck X", minLvl: 4, rarity: "EPIC", hp: 130, reward: 850, rust: 70 },
-            { id: 4, name: "Phantom Hypercar", minLvl: 7, rarity: "LEGENDARY", hp: 300, reward: 3000, rust: 100 }
+            { id: 1, name: "Rusty Sedan", minLvl: 1, rarity: "COMMON", hp: 14, reward: 80, rust: 10 },
+            { id: 2, name: "Vortex Sport", minLvl: 2, rarity: "RARE", hp: 28, reward: 220, rust: 20 },
+            { id: 3, name: "Cyber Truck X", minLvl: 4, rarity: "EPIC", hp: 60, reward: 750, rust: 35 },
+            { id: 4, name: "Phantom Hypercar", minLvl: 7, rarity: "LEGENDARY", hp: 140, reward: 2800, rust: 50 }
         ];
 
         var audioCtx = null;
@@ -405,6 +428,7 @@
             
             updateMarket();
             renderQuests();
+            renderLevelsModal();
             updateUI();
         });
 
@@ -451,10 +475,25 @@
                 showToast("⭐ НОВЫЙ УРОВЕНЬ: " + game.playerLvl);
                 playSound('crit');
             }
+            renderLevelsModal();
             updateUI();
         }
 
-        // РЕАЛИСТИЧНЫЕ SVG МОДЕЛИ МАШИН
+        function renderLevelsModal() {
+            document.getElementById('modal-curr-lvl').innerText = game.playerLvl;
+            var c = document.getElementById('levels-list-container');
+            c.innerHTML = '';
+            LEVEL_UNLOCKS.forEach(function(item) {
+                var isReached = game.playerLvl >= item.lvl;
+                var div = document.createElement('div');
+                div.className = 'list-row';
+                div.style.borderColor = isReached ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.05)';
+                div.innerHTML = `<div><b>${item.title}</b><br><small>${item.desc}</small></div>
+                <div style="font-weight:900; color:${isReached ? 'var(--neon-green)' : 'var(--text-sub)'}">${isReached ? 'ОТКРЫТО' : 'ЗАКРЫТО'}</div>`;
+                c.appendChild(div);
+            });
+        }
+
         function getRealisticCarSVG(id, color) {
             if(id === 1) { // Rusty Sedan
                 return `<svg viewBox="0 0 300 130" style="width:100%; height:100%;">
@@ -525,7 +564,6 @@
         function tapPart(e, id) {
             if(!game.activeCar || game.isOverheated) return;
 
-            // Сделали перегрев медленнее (больше кликов)
             var heatInc = (game.toolSkin === 2) ? 2.5 : 2.0;
             game.heat += heatInc;
             if(game.heat >= 100) {
@@ -627,7 +665,6 @@
         function coolTick() {
             if(game.heat > 0) {
                 game.heat -= (3.0 * game.coolSpeed);
-                // Охлаждение теперь позволяет работать, когда остыло ниже 40%, а не ждет 0%
                 if(game.isOverheated && game.heat <= 40) {
                     game.isOverheated = false;
                     showToast("⚡ Инструмент готов!");
@@ -750,12 +787,12 @@
         }
 
         function saveProgress() {
-            try { localStorage.setItem('scrap_empire_save_v2', JSON.stringify(game)); } catch(e) {}
+            try { localStorage.setItem('scrap_empire_save_v3', JSON.stringify(game)); } catch(e) {}
         }
 
         function loadProgress() {
             try {
-                var data = localStorage.getItem('scrap_empire_save_v2');
+                var data = localStorage.getItem('scrap_empire_save_v3');
                 if(data) {
                     var parsed = JSON.parse(data);
                     for(var key in parsed) game[key] = parsed[key];
